@@ -1,0 +1,61 @@
+/* Pronouns for SugarCube 2, by Charlie Ocean. Public domain (The Unlicense).
+   Paste into your story's stylesheet. Colors and fonts come from your
+   game's own styles; sizes are in em, so they grow with your text size. */
+
+.pp-picker { margin: 1em 0; }
+.pp-group,
+.pp-set2 {
+	border: 1px solid currentColor;
+	border-radius: 0.5em;
+	padding: 0.75em 1em 1em;
+	margin: 0;
+}
+.pp-set2 { margin-top: 1em; }
+.pp-legend { font-weight: bold; padding: 0 0.35em; }
+.pp-note { margin: 0.25em 0 0.75em; }
+
+/* the set buttons: the chosen one gets a check mark and a heavier border,
+   so it never depends on color alone */
+.pp-presets { display: flex; flex-wrap: wrap; gap: 0.5em; margin-bottom: 0.75em; }
+.pp-preset,
+.pp-add,
+.pp-remove,
+.pp-actions button {
+	font: inherit;
+	min-height: 2.75em;
+	padding: 0.4em 0.9em;
+	border-radius: 0.4em;
+	cursor: pointer;
+}
+.pp-preset[aria-pressed="true"] { font-weight: bold; outline: 3px solid currentColor; outline-offset: 1px; }
+.pp-preset[aria-pressed="true"]::before { content: "✓ "; }
+.pp-picker button:focus-visible,
+.pp-dialog button:focus-visible,
+.pp-picker input:focus-visible,
+.pp-dialog input:focus-visible { outline: 3px solid currentColor; outline-offset: 2px; }
+
+/* the five boxes wrap to fit any screen and any text size */
+.pp-fields { display: flex; flex-wrap: wrap; gap: 0.75em 1em; margin-bottom: 0.75em; }
+.pp-field,
+.pp-namefield { display: flex; flex-direction: column; gap: 0.25em; flex: 1 1 9em; }
+.pp-namefield { margin-bottom: 0.5em; }
+.pp-field input,
+.pp-namefield input { font: inherit; min-width: 0; width: 100%; box-sizing: border-box; padding: 0.35em 0.5em; }
+.pp-example { opacity: 0.85; font-size: 0.9em; }
+.pp-picker input[aria-invalid="true"],
+.pp-dialog input[aria-invalid="true"] { outline: 3px dashed currentColor; outline-offset: 2px; }
+
+.pp-alert { font-weight: bold; margin: 0.5em 0; }
+.pp-alert::before { content: "⚠ "; }
+.pp-preview { margin-top: 0.75em; }
+.pp-preview p { margin: 0.4em 0; font-style: italic; }
+.pp-actions { display: flex; flex-wrap: wrap; gap: 0.75em; margin-top: 1em; }
+
+/* read by screen readers, not shown */
+.pp-sr {
+	position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+	overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.pp-picker [hidden],
+.pp-dialog [hidden] { display: none !important; }

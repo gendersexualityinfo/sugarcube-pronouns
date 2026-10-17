@@ -1,0 +1,602 @@
+:: StoryTitle
+Pronouns for SugarCube: demo
+
+:: StoryData
+{
+  "ifid": "7B1E2C4A-5D3F-4E8B-9A61-2F0C8D4B7E35",
+  "format": "SugarCube",
+  "format-version": "2.37.3",
+  "start": "Start"
+}
+
+:: Story JavaScript [script]
+/* ====================================================================
+   Pronouns for SugarCube 2, by Charlie Ocean (they/them)
+   https://charlieocean.itch.io
+
+   Lets players pick their pronouns: one set, two sets, any pronouns, or
+   just their name. They can change their name and pronouns at any point,
+   and the choice is kept in saves.
+
+   Inspired by Chapel's Pronoun Templates and Sylveranty's tutorial
+   "Coding Pronouns and Verbs in Twine SugarCube."
+
+   Paste this whole file into your story's JavaScript, and pronouns.css
+   into its stylesheet. How to use it is in the README.
+
+   This is free and unencumbered software released into the public
+   domain. See the LICENSE file (The Unlicense).
+   ==================================================================== */
+(function () {
+	"use strict";
+
+	/* ---------- settings you can change ----------------------------- */
+	var config = {
+		/* the story variable that holds the player's name */
+		nameVariable: "playerName",
+		/* the name to use if the player leaves it blank */
+		defaultName: "Friend",
+		/* if the player picks two sets, these speakers use the second one.
+		   Everyone else uses the first. Example: ["sam", "rival"] */
+		secondSetSpeakers: [],
+		/* the title of the "name and pronouns" window */
+		dialogTitle: "Name and pronouns"
+	};
+
+	/* ---------- pronoun sets ----------------------------------------- */
+	var FIELDS = ["subj", "obj", "det", "poss", "refl"];
+	var PRESETS = {
+		she:  ["she", "her", "her", "hers", "herself"],
+		he:   ["he", "him", "his", "his", "himself"],
+		they: ["they", "them", "their", "theirs", "themself"],
+		xe:   ["xe", "xem", "xyr", "xyrs", "xemself"],
+		ze:   ["ze", "hir", "hir", "hirs", "hirself"]
+	};
+	var FORMS = { they: "subj", them: "obj", their: "det", theirs: "poss", themself: "refl" };
+	var ANY = ["she", "he", "they"];
+
+	function preset(key) {
+		var o = {};
+		FIELDS.forEach(function (f, i) { o[f] = PRESETS[key][i]; });
+		return o;
+	}
+	function cap(s) { s = String(s || ""); return s.charAt(0).toUpperCase() + s.slice(1); }
+	/* custom pronouns: letters, apostrophes, hyphens, and spaces only */
+	function clean(v) {
+		return String(v || "").toLowerCase().replace(/[^\p{L}'’\- ]/gu, "").replace(/\s+/g, " ").trim();
+	}
+	/* names: trimmed, capitalized, and free of anything SugarCube reads as markup */
+	function fixName(raw) {
+		var n = String(raw == null ? "" : raw).replace(/[<>\[\]{}$_`\\|@]/g, "").replace(/\s+/g, " ").trim();
+		return n ? n.charAt(0).toUpperCase() + n.slice(1) : "";
+	}
+	function complete(set) { return !!set && FIELDS.every(function (f) { return set[f]; }); }
+	function sameSet(a, b) { return !!a && !!b && FIELDS.every(function (f) { return a[f] === b[f]; }); }
+	function keyOf(set) {
+		for (var k in PRESETS) { if (sameSet(set, preset(k))) { return k; } }
+		return "";
+	}
+	function label(set) { return set.subj + "/" + set.obj; }
+
+	/* ---------- what the story holds ---------------------------------
+	   $pronouns is { mode, sets, seed, at }:
+	     mode   "sets" (one or two sets), "any", or "name"
+	     sets   the player's one or two sets (empty for "any" and "name")
+	     seed   decides which set each speaker uses with "any pronouns"
+	     at     when the player last chose (so the newest choice wins) */
+	function data() {
+		try { var d = State.variables.pronouns; return d && d.mode ? d : null; } catch (e) { return null; }
+	}
+	function playerName() {
+		var n = "";
+		try { n = fixName(State.variables[config.nameVariable]); } catch (e) {}
+		return n || config.defaultName;
+	}
+	function nameSet(n) { var pos = n + "'s"; return { subj: n, obj: n, det: pos, poss: pos, refl: n }; }
+
+	/* the same speaker always gets the same set from "any pronouns" */
+	function pickFor(who, seed) {
+		var h = Number(seed) || 0;
+		for (var i = 0; i < who.length; i++) { h = (h * 31 + who.charCodeAt(i)) >>> 0; }
+		return h % ANY.length;
+	}
+
+	/* which words a speaker uses for the player */
+	function resolve(who) {
+		var d = data();
+		who = String(who || "").trim().toLowerCase();
+		if (!d) { return { set: preset("they"), plural: true, named: false }; }
+		if (d.mode === "name") { return { set: nameSet(playerName()), plural: false, named: true }; }
+		var set;
+		if (d.mode === "any") {
+			set = preset(ANY[pickFor(who || "narrator", d.seed)]);
+		} else {
+			var sets = d.sets && d.sets.length ? d.sets : [preset("they")];
+			var second = sets.length > 1 && (who === "2" || config.secondSetSpeakers.map(function (s) {
+				return String(s).toLowerCase();
+			}).indexOf(who) !== -1);
+			set = sets[second ? 1 : 0];
+		}
+		return { set: set, plural: String(set.subj).toLowerCase() === "they", named: false };
+	}
+
+	/* ---------- filling in the tokens --------------------------------
+	   {they} {them} {their} {theirs} {themself}, capitalized as {They}
+	   and so on; {they're} {they've} {they'll} {they'd}; and verb pairs
+	   written plural first, like {are/is} or {run/runs}. Add @ and a
+	   speaker to any token, like {they@sam}, to use that speaker's set.
+	   A verb pair follows the nearest {they} (or {they're} and so on)
+	   before it, so "{They@sam} {worry/worries}" agrees with Sam's set. */
+	var TOKEN = /\{(?:(they)['’](re|ve|ll|d)|(they|them|their|theirs|themself)|([\p{L}'’\- ]+)\/([\p{L}'’\- ]+))(?:@([^{}@\s]+))?\}/giu;
+
+	function fill(text, speaker) { return fillWith(text, speaker, resolve); }
+	function fillWith(text, speaker, resolver) {
+		var s = String(text == null ? "" : text);
+		if (s.indexOf("{") === -1) { return s; }
+		var subject = speaker;   /* who the last {they} was about */
+		return s.replace(TOKEN, function (m, ct, c, word, plural, singular, at) {
+			var who = at || speaker, w;
+			if (ct) {
+				subject = who;
+				w = resolver(who);
+				var subj = ct.charAt(0) === "T" ? cap(w.set.subj) : w.set.subj;
+				c = c.toLowerCase();
+				if (c === "re") { return subj + (w.plural ? "'re" : "'s"); }
+				if (c === "ve") { return subj + (w.plural ? "'ve" : "'s"); }
+				if (c === "ll") { return subj + (w.named ? " will" : "'ll"); }
+				return subj + (w.named ? " would" : "'d");
+			}
+			if (word) {
+				if (word.toLowerCase() === "they") { subject = who; }
+				var out = resolver(who).set[FORMS[word.toLowerCase()]];
+				return word.charAt(0) === "T" ? cap(out) : out;
+			}
+			return resolver(at || subject).plural ? plural : singular;
+		});
+	}
+
+	/* Tokens are filled in wherever text shows up on screen: passages,
+	   widgets, StoryCaption, links, and text added later by macros like
+	   <<replace>> or <<linkreplace>>. A speaker can also come from the
+	   nearest data-speaker attribute, like <div data-speaker="sam">.
+	   Anything inside data-pronouns="off", code, or a text box is left alone. */
+	var SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1, CODE: 1, PRE: 1 };
+	function skipped(el) {
+		return !el || !!SKIP[el.nodeName] || !!(el.closest && el.closest("[data-pronouns='off']"));
+	}
+	function fillTextNode(t) {
+		var v = t.nodeValue;
+		if (!v || v.indexOf("{") === -1 || skipped(t.parentElement)) { return; }
+		var host = t.parentElement.closest("[data-speaker]");
+		var out = fill(v, host ? host.getAttribute("data-speaker") : "");
+		if (out !== v) { t.nodeValue = out; }
+	}
+	function fillIn(node) {
+		if (!node) { return; }
+		if (node.nodeType === 3) { fillTextNode(node); return; }
+		if (node.nodeType !== 1 && node.nodeType !== 11) { return; }
+		if (node.nodeType === 1 && skipped(node)) { return; }
+		var walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null), found = [];
+		while (walker.nextNode()) {
+			if (walker.currentNode.nodeValue.indexOf("{") !== -1) { found.push(walker.currentNode); }
+		}
+		found.forEach(fillTextNode);
+	}
+	$(document).on(":passagerender", function (ev) { fillIn(ev.content); });
+	new MutationObserver(function (records) {
+		records.forEach(function (r) { r.addedNodes.forEach(fillIn); });
+	}).observe(document.body, { childList: true, subtree: true });
+
+	/* ---------- the newest choice always wins ------------------------
+	   Going back, reloading, or loading an older save could bring back an
+	   old name or old pronouns. So the newest choice is also kept in this
+	   browser, and every screen uses it if it's newer than what the story
+	   holds. A story where nothing has been picked yet is left alone, so a
+	   new player never gets the last player's name. */
+	function storeKey() {
+		try { return "pronouns-" + (Config.saves.id || ""); } catch (e) { return "pronouns"; }
+	}
+	function readStored() {
+		try {
+			var r = JSON.parse(localStorage.getItem(storeKey()) || "null");
+			return r && r.data && r.data.mode ? r : null;
+		} catch (e) { return null; }
+	}
+	function writeStored(rec) {
+		try { localStorage.setItem(storeKey(), JSON.stringify(rec)); } catch (e) {}
+	}
+	$(document).on(":passagestart", function () {
+		var d = data(), rec = readStored();
+		if (!d || !rec || (rec.data.at || 0) <= (d.at || 0)) { return; }
+		try {
+			State.variables.pronouns = clone(rec.data);
+			if (rec.name) { State.variables[config.nameVariable] = rec.name; }
+		} catch (e) {}
+	});
+
+	/* save a choice into the story (and this browser) */
+	function commit(choice, name) {
+		var prev = readStored(), d = data();
+		var at = Math.max(Date.now(), ((prev && prev.data.at) || 0) + 1, ((d && d.at) || 0) + 1);
+		var sets = choice.mode === "sets" ? (choice.s2 ? [choice.s1, choice.s2] : [choice.s1]) : [];
+		var next = {
+			mode: choice.mode,
+			sets: clone(sets),
+			seed: d && d.seed ? d.seed : Math.floor(Math.random() * 1e9),
+			at: at
+		};
+		State.variables.pronouns = next;
+		if (name != null) { State.variables[config.nameVariable] = name; }
+		writeStored({
+			data: clone(next),
+			name: String(State.variables[config.nameVariable] || ""),
+			/* what the picker shows next time, even after "any" or "name" */
+			form: clone(choice)
+		});
+		$(document).trigger(":pronounschange");
+	}
+
+	/* ---------- the picker -------------------------------------------- */
+	var pickerCount = 0;
+	var SAMPLE = "{They're} out walking {their} dog, and the red umbrella is {theirs}. " +
+		"I waved at {them}. {They'll} probably fix the fence {themself}.";
+	var SAMPLE_NAMED = "{They're} out walking {their} dog, and the red umbrella is {theirs}. " +
+		"I waved at {them}. {They'll} probably fix the fence.";
+
+	function sample(set, named, name) {
+		var w = { set: set, plural: !named && String(set.subj).toLowerCase() === "they", named: named };
+		return "“That's " + name + " over there. " +
+			fillWith(named ? SAMPLE_NAMED : SAMPLE, "", function () { return w; }) + "”";
+	}
+
+	function fieldsHtml(id, n) {
+		var ex = { subj: "they said", obj: "ask them", det: "their dog", poss: "it's theirs", refl: "by themself" };
+		var names = { subj: "they", obj: "them", det: "their", poss: "theirs", refl: "themself" };
+		var extra = n === 2 ? '<span class="pp-sr">, second set</span>' : "";
+		return '<div class="pp-fields">' + FIELDS.map(function (f) {
+			return '<label class="pp-field"><span class="pp-word">' + names[f] + extra +
+				' <span class="pp-example">(“' + ex[f] + '”)</span></span>' +
+				'<input type="text" id="' + id + "-s" + n + "-" + f + '" data-field="' + f +
+				'" maxlength="20" autocomplete="off" spellcheck="false"></label>';
+		}).join("") + "</div>";
+	}
+	function presetButtons(n) {
+		var keys = n === 1 ? ["she", "he", "they", "any", "name"] : ["she", "he", "they"];
+		var text = { she: "she/her", he: "he/him", they: "they/them", any: "any pronouns", name: "just my name" };
+		return '<div class="pp-presets" role="group" aria-label="' + (n === 1 ? "pronoun sets" : "second pronoun set") + '">' +
+			keys.map(function (k) {
+				return '<button type="button" class="pp-preset" data-set="' + k + '" data-target="' + n +
+					'" aria-pressed="false">' + text[k] + "</button>";
+			}).join("") + "</div>";
+	}
+
+	/* builds a picker inside root. live: save every valid change right away.
+	   nameFn: where the sample sentence gets the name (the story by default).
+	   Returns { read, check, paint } for the dialog to use. */
+	function buildPicker(root, live, nameFn) {
+		nameFn = nameFn || playerName;
+		var id = "pp" + (++pickerCount);
+		var state = { mode: "sets", second: false };
+		var $root = $(root);
+		$root.attr("data-pronouns", "off").addClass("pp-picker").html(
+			'<fieldset class="pp-group"><legend class="pp-legend">Your pronouns</legend>' +
+			'<p class="pp-note">Pick a set, or write your own.</p>' +
+			presetButtons(1) +
+			'<div class="pp-set1">' + fieldsHtml(id, 1) + "</div>" +
+			'<button type="button" class="pp-add" aria-expanded="false" aria-controls="' + id + '-set2">+ Add a second set</button>' +
+			'<fieldset class="pp-set2" id="' + id + '-set2" hidden><legend class="pp-legend">Your second set</legend>' +
+			'<p class="pp-note">Some characters use this one.</p>' +
+			presetButtons(2) + fieldsHtml(id, 2) +
+			'<button type="button" class="pp-remove">Remove the second set</button></fieldset>' +
+			'<p class="pp-alert" role="alert" hidden></p>' +
+			'<div class="pp-preview"></div>' +
+			"</fieldset>");
+
+		function input(n, f) { return root.querySelector("#" + id + "-s" + n + "-" + f); }
+		function readSet(n) {
+			var o = {};
+			FIELDS.forEach(function (f) { o[f] = clean(input(n, f).value); });
+			return o;
+		}
+		function read() {
+			return { mode: state.mode, s1: readSet(1), s2: state.second ? readSet(2) : null };
+		}
+		function problem(c) {
+			if (c.mode !== "sets") { return null; }
+			if (!complete(c.s1)) {
+				return [FIELDS.filter(function (f) { return !c.s1[f]; })[0], 1, "Pick a set, or fill in all five boxes."];
+			}
+			if (c.s2 && !complete(c.s2)) {
+				return [FIELDS.filter(function (f) { return !c.s2[f]; })[0], 2, "Fill in all five boxes for your second set, or remove it."];
+			}
+			return null;
+		}
+		function showProblem(p) {
+			var alert = root.querySelector(".pp-alert");
+			if (!p) { alert.hidden = true; return false; }
+			alert.textContent = p[2];
+			alert.hidden = false;
+			var box = input(p[1], p[0]);
+			box.setAttribute("aria-invalid", "true");
+			box.focus();
+			return true;
+		}
+		function paint() {
+			var c = read(), custom = c.mode === "sets";
+			$root.find(".pp-preset").each(function () {
+				var key = this.getAttribute("data-set"), target = this.getAttribute("data-target") === "2" ? c.s2 : c.s1, on;
+				if (key === "any" || key === "name") { on = c.mode === key; }
+				else { on = custom && sameSet(target, preset(key)); }
+				this.setAttribute("aria-pressed", String(on));
+			});
+			/* the second set never offers the set already picked as the first */
+			$root.find('.pp-preset[data-target="2"]').each(function () {
+				this.hidden = sameSet(c.s1, preset(this.getAttribute("data-set")));
+			});
+			$root.find(".pp-set1").prop("hidden", !custom);
+			$root.find(".pp-add").prop("hidden", !custom || state.second).attr("aria-expanded", String(state.second));
+			$root.find(".pp-set2").prop("hidden", !custom || !state.second);
+			$root.find("input").each(function () { if (this.value.trim()) { this.removeAttribute("aria-invalid"); } });
+			if (!problem(c)) { root.querySelector(".pp-alert").hidden = true; }
+
+			var lines = [];
+			if (c.mode === "any") { lines.push("Each character picks she, he, or they, and sticks with it."); }
+			else if (c.mode === "name") { lines.push("Everyone uses your name instead. " + sample(nameSet(nameFn()), true, nameFn())); }
+			else {
+				[c.s1, c.s2].forEach(function (s, k) {
+					if (!s) { return; }
+					var lead = c.s2 ? (k ? "Second set: " : "First set: ") : "";
+					lines.push(complete(s) ? lead + sample(s, false, nameFn())
+						: lead + "Fill in all five boxes to see a sample sentence.");
+				});
+			}
+			$root.find(".pp-preview").empty().append(lines.map(function (l) { return $("<p></p>").text(l); }));
+			if (live && !problem(c)) { commit(c); }
+		}
+		function load(c) {
+			state = { mode: c && c.mode ? c.mode : "sets", second: !!(c && c.s2) };
+			FIELDS.forEach(function (f) {
+				input(1, f).value = c && c.s1 ? c.s1[f] || "" : "";
+				input(2, f).value = c && c.s2 ? c.s2[f] || "" : "";
+			});
+		}
+
+		$root
+			.on("click", ".pp-preset", function () {
+				var key = this.getAttribute("data-set"), n = this.getAttribute("data-target") === "2" ? 2 : 1;
+				if (key === "any" || key === "name") { state.mode = state.mode === key ? "sets" : key; }
+				else {
+					state.mode = "sets";
+					FIELDS.forEach(function (f, i) { input(n, f).value = PRESETS[key][i]; });
+				}
+				paint();
+			})
+			.on("input", "input", paint)
+			.on("click", ".pp-add", function () {
+				state.second = true;
+				paint();
+				input(2, "subj").focus();
+			})
+			.on("click", ".pp-remove", function () {
+				state.second = false;
+				FIELDS.forEach(function (f) { input(2, f).value = ""; });
+				paint();
+				root.querySelector(".pp-add").focus();
+			});
+
+		/* start from what the story holds, or this browser's last answer */
+		var rec = readStored(), d = data();
+		if (d && d.mode === "sets") { load({ mode: "sets", s1: d.sets[0], s2: d.sets[1] || null }); }
+		else if (d) { load({ mode: d.mode, s1: rec && rec.form ? rec.form.s1 : null, s2: rec && rec.form ? rec.form.s2 : null }); }
+		else if (rec && rec.form) { load(rec.form); }
+		paint();
+
+		return { read: read, check: function () { return !showProblem(problem(read())); }, paint: paint };
+	}
+
+	/* <<pronounpicker>>: the picker, right in a passage. Every valid
+	   change is saved as the player makes it. */
+	Macro.add("pronounpicker", {
+		handler: function () {
+			var box = document.createElement("div");
+			this.output.appendChild(box);
+			buildPicker(box, true);
+		}
+	});
+
+	/* ---------- change your name and pronouns anytime ----------------- */
+	function openDialog() {
+		if (Dialog.create) { Dialog.create(config.dialogTitle, "pp-dialog"); }
+		else { Dialog.setup(config.dialogTitle, "pp-dialog"); }
+		/* SugarCube reuses the dialog's body, so everything goes in a fresh
+		   element each time; old buttons and their handlers go with the old one */
+		var body = document.createElement("div");
+		$(Dialog.body()).empty().append(body);
+		$(body).attr("data-pronouns", "off").html(
+			'<p class="pp-note">Everyone uses these from the next screen on.</p>' +
+			'<label class="pp-namefield"><span class="pp-word">Your name</span>' +
+			'<input type="text" class="pp-name" maxlength="30" autocomplete="off"></label>' +
+			'<p class="pp-alert pp-namealert" role="alert" hidden>Your name can\'t be blank.</p>' +
+			'<div class="pp-dialogpicker"></div>' +
+			'<div class="pp-actions"><button type="button" class="pp-save">Save</button>' +
+			'<button type="button" class="pp-cancel">Cancel</button></div>');
+		var nameBox = body.querySelector(".pp-name");
+		var current = "";
+		try { current = fixName(State.variables[config.nameVariable]); } catch (e) {}
+		nameBox.value = current;
+		var picker = buildPicker(body.querySelector(".pp-dialogpicker"), false, function () {
+			return fixName(nameBox.value) || config.defaultName;
+		});
+
+		function save() {
+			var name = fixName(nameBox.value);
+			if (!name) {
+				$(body).find(".pp-namealert").prop("hidden", false);
+				nameBox.setAttribute("aria-invalid", "true");
+				nameBox.focus();
+				return;
+			}
+			if (!picker.check()) { return; }
+			commit(picker.read(), name);
+			Dialog.close();
+		}
+		$(body)
+			.on("input", ".pp-name", function () {
+				if (this.value.trim()) { this.removeAttribute("aria-invalid"); $(body).find(".pp-namealert").prop("hidden", true); }
+				picker.paint();
+			})
+			.on("keydown", ".pp-name", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); save(); } })
+			.on("click", ".pp-save", save)
+			.on("click", ".pp-cancel", function () { Dialog.close(); });
+		Dialog.open();
+		nameBox.focus();
+	}
+
+	/* ---------- for your own code ------------------------------------- */
+	setup.pronouns = {
+		/* fill tokens in a string yourself: setup.pronouns.fill("{They} left.", "sam") */
+		fill: fill,
+		/* open the "name and pronouns" window */
+		open: openDialog,
+		/* a short description: "she/her", "she/her and they/them",
+		   "any pronouns", or "just my name" ("" if nothing is picked yet) */
+		describe: function () {
+			var d = data();
+			if (!d) { return ""; }
+			if (d.mode === "any") { return "any pronouns"; }
+			if (d.mode === "name") { return "just my name"; }
+			return d.sets.map(label).join(" and ");
+		},
+		/* true once the player has picked */
+		chosen: function () { return !!data(); },
+		/* choose for the player from code: "she", "he", "they", "xe", "ze",
+		   "any", "name", or a set like { subj: "ey", obj: "em", det: "eir",
+		   poss: "eirs", refl: "emself" }. A second argument adds a second set. */
+		choose: function (first, second) {
+			function toSet(v) {
+				if (typeof v === "string" && PRESETS[v]) { return preset(v); }
+				if (v && typeof v === "object") {
+					var o = {};
+					FIELDS.forEach(function (f) { o[f] = clean(v[f]); });
+					return complete(o) ? o : null;
+				}
+				return null;
+			}
+			if (first === "any" || first === "name") { commit({ mode: first, s1: null, s2: null }); return true; }
+			var s1 = toSet(first), s2 = second ? toSet(second) : null;
+			if (!s1 || (second && !s2)) { return false; }
+			commit({ mode: "sets", s1: s1, s2: s2 });
+			return true;
+		},
+		config: config
+	};
+}());
+
+/* demo only: Sam uses the second set if the player picks two */
+setup.pronouns.config.secondSetSpeakers = ["sam"];
+
+
+:: Story Stylesheet [stylesheet]
+/* Pronouns for SugarCube 2, by Charlie Ocean. Public domain (The Unlicense).
+   Paste into your story's stylesheet. Colors and fonts come from your
+   game's own styles; sizes are in em, so they grow with your text size. */
+
+.pp-picker { margin: 1em 0; }
+.pp-group,
+.pp-set2 {
+	border: 1px solid currentColor;
+	border-radius: 0.5em;
+	padding: 0.75em 1em 1em;
+	margin: 0;
+}
+.pp-set2 { margin-top: 1em; }
+.pp-legend { font-weight: bold; padding: 0 0.35em; }
+.pp-note { margin: 0.25em 0 0.75em; }
+
+/* the set buttons: the chosen one gets a check mark and a heavier border,
+   so it never depends on color alone */
+.pp-presets { display: flex; flex-wrap: wrap; gap: 0.5em; margin-bottom: 0.75em; }
+.pp-preset,
+.pp-add,
+.pp-remove,
+.pp-actions button {
+	font: inherit;
+	min-height: 2.75em;
+	padding: 0.4em 0.9em;
+	border-radius: 0.4em;
+	cursor: pointer;
+}
+.pp-preset[aria-pressed="true"] { font-weight: bold; outline: 3px solid currentColor; outline-offset: 1px; }
+.pp-preset[aria-pressed="true"]::before { content: "✓ "; }
+.pp-picker button:focus-visible,
+.pp-dialog button:focus-visible,
+.pp-picker input:focus-visible,
+.pp-dialog input:focus-visible { outline: 3px solid currentColor; outline-offset: 2px; }
+
+/* the five boxes wrap to fit any screen and any text size */
+.pp-fields { display: flex; flex-wrap: wrap; gap: 0.75em 1em; margin-bottom: 0.75em; }
+.pp-field,
+.pp-namefield { display: flex; flex-direction: column; gap: 0.25em; flex: 1 1 9em; }
+.pp-namefield { margin-bottom: 0.5em; }
+.pp-field input,
+.pp-namefield input { font: inherit; min-width: 0; width: 100%; box-sizing: border-box; padding: 0.35em 0.5em; }
+.pp-example { opacity: 0.85; font-size: 0.9em; }
+.pp-picker input[aria-invalid="true"],
+.pp-dialog input[aria-invalid="true"] { outline: 3px dashed currentColor; outline-offset: 2px; }
+
+.pp-alert { font-weight: bold; margin: 0.5em 0; }
+.pp-alert::before { content: "⚠ "; }
+.pp-preview { margin-top: 0.75em; }
+.pp-preview p { margin: 0.4em 0; font-style: italic; }
+.pp-actions { display: flex; flex-wrap: wrap; gap: 0.75em; margin-top: 1em; }
+
+/* read by screen readers, not shown */
+.pp-sr {
+	position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+	overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.pp-picker [hidden],
+.pp-dialog [hidden] { display: none !important; }
+
+/* demo only */
+.say { margin: 1em 0; padding: 0.5em 1em; border-left: 4px solid currentColor; }
+
+
+:: StoryInit
+<<set $playerName to "">>
+
+:: StoryMenu
+<<link "Name and pronouns">><<run setup.pronouns.open()>><</link>>
+
+:: Widgets [widget]
+<<widget "say" container>><div class="say" @data-speaker="_args[0]"><strong>_args[1]:</strong> _contents</div><</widget>>
+
+:: Start
+What's your name?
+<<textbox "$playerName" "">>
+
+<<pronounpicker>>
+
+[[Start the story|Porch]]
+
+:: Porch
+It's a gray morning. $playerName steps out onto the porch, and {they're} glad {they} brought a sweater. {They} {sit/sits} on the top step with {their} coffee.
+
+<<say "sam" "Sam">>Morning! I saved {them} a muffin. {They're} going to love it.<</say>>
+
+<<say "jo" "Jo">>Sam's been guarding that muffin all week. It's {theirs}, Sam. Hand it over.<</say>>
+
+<<linkreplace "Ask what's going on">>Sam grins at Jo. "Nothing! {They@sam} always {worry/worries} too much about breakfast." Sam passes over the muffin, and {they} {laugh/laughs}.<</linkreplace>>
+
+Right now your pronouns are: <<= setup.pronouns.describe() || "not picked yet">>.
+
+You can change your name and pronouns anytime from "Name and pronouns" in the menu.
+
+[[Go back inside|Inside]]
+
+:: Inside
+Inside, it's warm. $playerName hangs up {their} sweater. {They've} got the whole afternoon free, so {they} {make/makes} tea and {treat/treats} {themself} to the last muffin.
+
+[[Back to the porch|Porch]]
+[[Start over|Start]]
