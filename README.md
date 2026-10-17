@@ -7,15 +7,20 @@ A pronoun picker for Twine games made with SugarCube 2. Players can choose:
 - any pronouns: each character picks she, he, or they, and sticks with it
 - just my name: everyone uses the player's name instead
 
-You write each line once, and it reads right for every choice. Players can change their first name and pronouns at any point, and their choice is kept in saves. The picker works with a keyboard, doesn't rely on color, and fits phone screens at large text sizes.
+Players can also pick the name and pronouns of another character, like a rival or a love interest.
+
+You write each line once, and it reads right for every choice. Players can change names and pronouns at any point, and their choices are kept in saves. The picker works with a keyboard, doesn't rely on color, and fits phone screens at large text sizes.
 
 Made by Charlie Ocean (they/them). Tested with SugarCube 2.37.3.
 
 ## Try it first
 
-Download `demo/demo.html` and open it in your browser. It's a short story that shows everything here, including two sets.
+There are two short demos in the `demo` folder. Download one and open it in your browser:
 
-To see how the demo is built, import it into Twine (**Library → Import**, then pick `demo.html` or `demo.twee`). Its "Read me first" passage explains what each passage does.
+- `demo.html`: the player picks their own first name and pronouns, including two sets.
+- `character-demo.html`: the player picks the name and pronouns of someone they met at a bookstore.
+
+To see how a demo is built, import it into Twine (**Library → Import**, then pick the `.html` or `.twee` file). Its "Read me first" passage explains what each passage does.
 
 ## Which files you need
 
@@ -115,6 +120,56 @@ You don't have to plan for players who pick something else. With one set, Sam us
 
 When a player picks any pronouns, each character picks she, he, or they and keeps it for the whole story. The labels from the last section decide who's who, so Sam always says the same thing, and so does Jo. Unlabeled text counts as the narrator, which also keeps one set. You don't need to change anything for this to work.
 
+## Other characters
+
+Your player can also pick the name and pronouns of someone else in the story: a rival, a best friend, or a love interest.
+
+1. Set the character up in your story's JavaScript, below the code you pasted in. Give them a label (lowercase, with no spaces), the names to choose from, and a stand-in name and pronouns, so the player can just click through if they'd rather not choose:
+
+   ```js
+   setup.pronouns.character("crush", {
+   	names: ["Jordan", "Maya", "Andre"],
+   	name: "Jordan",
+   	pronouns: "they"
+   });
+   ```
+
+2. Add the picker to a passage, with the passage to go to next and the button's text. Write your own question above it:
+
+   ```
+   Who was it?
+
+   <<characterpicker "crush" "Bookstore" "Tell Riley">>
+   ```
+
+   The player sees name buttons for Jordan, Maya, and Andre, then she/her, he/him, and they/them, with room to write their own. Jordan and they/them start out picked.
+
+3. Write the character's lines with their label and a colon in front of each token:
+
+   ```
+   {crush:name} pulls a book off the shelf. {crush:They} {say/says} it's {crush:their} favorite.
+   ```
+
+   With Maya and she/her, that reads "Maya pulls a book off the shelf. She says it's her favorite." The verb matches the nearest pronoun before it, so `{say/says}` follows the crush here.
+
+4. Let players change their mind later. Add this to your `StoryMenu` passage:
+
+   ```
+   <<link "Crush's name and pronouns">><<run setup.pronouns.open("crush")>><</link>>
+   ```
+
+Every token works with a label: `{crush:they}`, `{crush:them}`, `{crush:their}`, `{crush:theirs}`, `{crush:themself}`, `{crush:they're}`, `{crush:name}`, `{crush:name's}`, and so on. Tokens without a label still mean the player, so you can use both in the same sentence.
+
+More options for `setup.pronouns.character()`:
+
+| Option | What it does |
+|---|---|
+| `names` | The names to choose from, shown as buttons. Leave it out for a first-name box instead |
+| `name` | The stand-in name, until the player picks |
+| `pronouns` | The stand-in pronouns: `"she"`, `"he"`, or `"they"` (or a set of your own, like `{ subj: "ey", obj: "em", det: "eir", poss: "eirs", refl: "emself" }`) |
+| `customPronouns` | Set to `false` to offer only she/her, he/him, and they/them, without the boxes for writing your own |
+| `title` | The title of the window that `setup.pronouns.open("crush")` opens |
+
 ## Settings
 
 Change these in your story's JavaScript, below the code you pasted in. That way you can paste in a new version of `pronouns.js` later without losing them.
@@ -152,6 +207,12 @@ setup.pronouns.chosen()                      // true once the player has picked
 setup.pronouns.name()                        // the player's first name, or "Friend" if it's blank
 setup.pronouns.choose("they")                // pick for the player: "she", "he", "they", "xe", "ze", "any", or "name"
 setup.pronouns.choose("she", "they")         // two sets
+
+setup.pronouns.open("crush")                 // a character's "Name and pronouns" window
+setup.pronouns.name("crush")                 // their name (or the stand-in, until the player picks)
+setup.pronouns.describe("crush")             // their pronouns, like "they/them"
+setup.pronouns.chosen("crush")               // true once the player has picked for them
+setup.pronouns.chooseFor("crush", "she", "Maya")  // pick for them from code
 ```
 
 Your own set works too: `setup.pronouns.choose({ subj: "ey", obj: "em", det: "eir", poss: "eirs", refl: "emself" })`.
@@ -160,11 +221,11 @@ Your own set works too: `setup.pronouns.choose({ subj: "ey", obj: "em", det: "ei
 
 Inspired by [Chapel's Pronoun Templates](https://github.com/ChapelR/custom-macros-for-sugarcube-2/blob/master/docs/pronoun-templates.md) and Sylveranty's tutorial [Coding Pronouns and Verbs in Twine SugarCube](https://sylveranty.itch.io/coding-pronouns-and-verbs-in-twine-sugarcube). Thank you both.
 
-`demo/demo.html` includes [SugarCube](https://www.motoslave.net/sugarcube/2/) by Thomas Michael Edwards, under its own license ([demo/SUGARCUBE-LICENSE.txt](demo/SUGARCUBE-LICENSE.txt)).
+The demo pages (`demo.html` and `character-demo.html`) include [SugarCube](https://www.motoslave.net/sugarcube/2/) by Thomas Michael Edwards, under its own license ([demo/SUGARCUBE-LICENSE.txt](demo/SUGARCUBE-LICENSE.txt)).
 
 ## License
 
-Public domain ([The Unlicense](LICENSE)). Use it in any game, free or paid, and change it however you like. Credit isn't required, but it's always appreciated. (SugarCube itself, inside the demo page, keeps its own license.)
+Public domain ([The Unlicense](LICENSE)). Use it in any game, free or paid, and change it however you like. Credit isn't required, but it's always appreciated. (SugarCube itself, inside the demo pages, keeps its own license.)
 
 ## Support and feedback
 
