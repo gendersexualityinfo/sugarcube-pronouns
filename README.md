@@ -85,10 +85,10 @@ With they/them, that reads "Robin grabs their coat. They run for the bus." With 
 
 Some people use two sets, like she/her and they/them. When a player picks two, you decide which characters use which set:
 
-1. Make up a short label for each character who should use the second set: lowercase, with no spaces, like `sam` or `ms-lee`. List the labels in your story's JavaScript, below the code you pasted in:
+1. Make up a short label for each character who should use the second set: lowercase, with no spaces, like `pip` or `ms-lee`. List the labels in your story's JavaScript, below the code you pasted in:
 
    ```js
-   setup.pronouns.config.secondSetSpeakers = ["sam"];
+   setup.pronouns.config.secondSetSpeakers = ["pip"];
    ```
 
    Everyone not on the list (the narrator, every other character, and any text you don't label) uses the first set.
@@ -102,23 +102,23 @@ Some people use two sets, like she/her and they/them. When a player picks two, y
 3. Write each character's lines with it. The first word is the label, and the second is the name shown on screen:
 
    ```
-   <<say "sam" "Sam">>Has anyone seen {name}? {They're} late again.<</say>>
-   <<say "jo" "Jo">>Give {them} a minute. {They} always {stop/stops} for coffee.<</say>>
+   <<say "pip" "Pip">>Has anyone seen {name}? {They're} late again.<</say>>
+   <<say "marisol" "Marisol">>Give {them} a minute. {They} always {stop/stops} for coffee.<</say>>
    ```
 
-For a single word outside the widget, put the label right in the token: `{them@sam}`. To use the second set without a character at all, write `@2`: `{they@2}`.
+For a single word outside the widget, put the label right in the token: `{them@pip}`. To use the second set without a character at all, write `@2`: `{they@2}`.
 
 With she/her first and they/them second, players see:
 
-> **Sam:** Has anyone seen Robin? They're late again.
+> **Pip:** Has anyone seen Robin? They're late again.
 >
-> **Jo:** Give her a minute. She always stops for coffee.
+> **Marisol:** Give her a minute. She always stops for coffee.
 
-You don't have to plan for players who pick something else. With one set, Sam uses it like everyone does. With just my name, everyone uses the name. With any pronouns, see below.
+You don't have to plan for players who pick something else. With one set, Pip uses it like everyone does. With just my name, everyone uses the name. With any pronouns, see below.
 
 ## Any pronouns
 
-When a player picks any pronouns, each character picks she, he, or they and keeps it for the whole story. The labels from the last section decide who's who, so Sam always says the same thing, and so does Jo. Unlabeled text counts as the narrator, which also keeps one set. You don't need to change anything for this to work.
+When a player picks any pronouns, each character picks she, he, or they and keeps it for the whole story. The labels from the last section decide who's who, so Pip always says the same thing, and so does Marisol. Unlabeled text counts as the narrator, which also keeps one set. You don't need to change anything for this to work.
 
 ## Other characters
 
@@ -175,7 +175,7 @@ More options for `setup.pronouns.character()`:
 Change these in your story's JavaScript, below the code you pasted in. That way you can paste in a new version of `pronouns.js` later without losing them.
 
 ```js
-setup.pronouns.config.secondSetSpeakers = ["sam"];
+setup.pronouns.config.secondSetSpeakers = ["pip"];
 setup.pronouns.config.requireName = false;
 ```
 
@@ -202,7 +202,7 @@ setup.pronouns.config.requireName = false;
 ## For your own code
 
 ```js
-setup.pronouns.fill("{They} waved.", "sam")  // fill tokens in any text; the label is optional
+setup.pronouns.fill("{They} waved.", "pip")  // fill tokens in any text; the label is optional
 setup.pronouns.open()                        // open the "Name and pronouns" window
 setup.pronouns.describe()                    // "she/her", "she/her and they/them", "any pronouns", or "just my name"
 setup.pronouns.chosen()                      // true once the player has picked

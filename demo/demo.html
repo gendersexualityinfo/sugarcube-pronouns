@@ -228,7 +228,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 		   true: a new game fills in this browser's last name and pronouns. */
 		rememberLastChoice: false,
 		/* if the player picks two sets, these speakers use the second one.
-		   Everyone else uses the first. Example: ["sam", "rival"] */
+		   Everyone else uses the first. Example: ["pip", "rival"] */
 		secondSetSpeakers: [],
 		/* the title of the "name and pronouns" window */
 		dialogTitle: "Name and pronouns"
@@ -349,14 +349,14 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 	   written plural first, like {are/is} or {run/runs}; and {name} for
 	   the player's name ({name's} adds the 's).
 
-	   Add @ and a speaker, like {they@sam}, to use the player's pronouns
+	   Add @ and a speaker, like {they@pip}, to use the player's pronouns
 	   the way that speaker does (for two sets and any pronouns).
 
 	   Put a character's label and a colon in front, like {crush:they} or
 	   {crush:name}, for a character whose pronouns the player picked.
 
 	   A verb pair follows the nearest {they} (or {they're} and so on)
-	   before it, so "{They@sam} {worry/worries}" agrees with Sam's set,
+	   before it, so "{They@pip} {worry/worries}" agrees with Pip's set,
 	   and "{crush:They} {laugh/laughs}" agrees with the crush's. */
 	var TOKEN = /\{(?:([a-z][\w-]*):)?(?:(they)['’](re|ve|ll|d)|(they|them|their|theirs|themself)|(name)(['’]s)?|([\p{L}'’\- ]+)\/([\p{L}'’\- ]+))(?:@([^{}@\s]+))?\}/giu;
 
@@ -405,7 +405,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 	/* Tokens are filled in wherever text shows up on screen: passages,
 	   widgets, StoryCaption, links, and text added later by macros like
 	   <<replace>> or <<linkreplace>>. A speaker can also come from the
-	   nearest data-speaker attribute, like <div data-speaker="sam">.
+	   nearest data-speaker attribute, like <div data-speaker="pip">.
 	   Anything inside data-pronouns="off", code, or a text box is left alone. */
 	var SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1, CODE: 1, PRE: 1 };
 	function skipped(el) {
@@ -865,7 +865,7 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 
 	/* ---------- for your own code ------------------------------------- */
 	setup.pronouns = {
-		/* fill tokens in a string yourself: setup.pronouns.fill("{They} left.", "sam") */
+		/* fill tokens in a string yourself: setup.pronouns.fill("{They} left.", "pip") */
 		fill: fill,
 		/* open the "name and pronouns" window, for the player or a character:
 		   setup.pronouns.open() or setup.pronouns.open("crush") */
