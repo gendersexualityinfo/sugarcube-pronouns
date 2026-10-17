@@ -235,7 +235,14 @@ The demo pages (`demo.html` and `character-demo.html`) include [SugarCube](https
 
 ## License
 
-Public domain ([The Unlicense](LICENSE)). Use it in any game, free or paid, and change it however you like. Credit isn't required, but it's always appreciated. (SugarCube itself, inside the demo pages, keeps its own license.)
+Public domain ([The Unlicense](LICENSE)). Use it in any game, free or paid, and change it however you like. (SugarCube itself, inside the demo pages, keeps its own license.)
+
+Credit is completely optional. If you'd like to add it to your game's credits anyway, you're welcome to copy this:
+
+```
+Pronouns: Pronouns for SugarCube by Charlie Ocean
+https://github.com/gendersexualityinfo/sugarcube-pronouns
+```
 
 ## Support and feedback
 
