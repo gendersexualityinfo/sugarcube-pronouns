@@ -1,0 +1,3 @@
+# The demo pages include all of SugarCube, so GitHub skips them when it
+# counts which languages the project is written in.
+demo/*.html linguist-vendored
