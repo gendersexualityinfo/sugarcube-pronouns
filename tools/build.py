@@ -177,7 +177,7 @@ def twee(demo):
 def library_twee():
     js = (ROOT / "pronouns.js").read_text(encoding="utf-8")
     css = (ROOT / "pronouns.css").read_text(encoding="utf-8")
-    return ("/* Pronouns for SugarCube 2, by Charlie Ocean. Public domain (The Unlicense).\n"
+    return ("/* Pronouns for SugarCube 2, version 1.0.0, by Charlie Ocean. Public domain (The Unlicense).\n"
             "   For Tweego: add this file to your project. Twine users can paste\n"
             "   pronouns.js and pronouns.css into Story > JavaScript and Story > Stylesheet. */\n\n"
             ":: Pronouns JavaScript [script]\n" + js + "\n\n"

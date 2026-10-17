@@ -11,7 +11,7 @@ Players can also pick the name and pronouns of another character, like a rival o
 
 You write each line once, and it reads right for every choice. Players can change names and pronouns at any point, and their choices are kept in saves. The picker works with a keyboard, doesn't rely on color, and fits phone screens at large text sizes.
 
-Made by Charlie Ocean (they/them). Tested with SugarCube 2.37.3.
+Version 1.0.0, made by Charlie Ocean (they/them). Tested with SugarCube 2.37.3.
 
 ## Try it first
 

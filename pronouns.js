@@ -1,6 +1,7 @@
 /* ====================================================================
-   Pronouns for SugarCube 2, by Charlie Ocean (they/them)
-   https://charlieocean.itch.io
+   Pronouns for SugarCube 2, version 1.0.0
+   by Charlie Ocean (they/them), https://charlieocean.itch.io
+   Newest version: https://github.com/gendersexualityinfo/sugarcube-pronouns
 
    Lets players pick their pronouns: one set, two sets, any pronouns, or
    just their name. Players can also pick the name and pronouns of other
