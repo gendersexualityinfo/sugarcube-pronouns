@@ -841,15 +841,19 @@ It's a cool fall morning. {name} steps out onto the porch with a mug of coffee. 
 
 <<say "jo" "Jo">>Leave {them} alone, Sam. {They've} had a long week.<</say>>
 
-<<linkreplace "Wave back">>{name} waves back and laughs. "I saved {them@sam} a muffin," Sam tells Jo. "{They@sam} {deserve/deserves} it." Sam jogs over with a paper bag.<</linkreplace>>
+<<linkreplace "Wave back">>{name} waves back and laughs. "I saved {them@sam} a muffin," Sam tells Jo. "{They@sam} {deserve/deserves} it." Sam jogs over with a paper bag.
+
+<<linkreplace "Say thanks">><<say "me" "{name}">>Thank you, Sam! You didn't have to do that.<</say>>
+
+<<say "sam" "Sam">>Sure I did. Go eat it while it's warm.<</say>>
+
+[[Head inside|Inside]]<</linkreplace>><</linkreplace>>
 
 <div class="note">How this demo works: the narrator and Jo use your first set of pronouns. If you picked two sets, Sam uses your second set. With any pronouns, each character picks she, he, or they, and keeps it.
 
 Your pronouns right now: <<= setup.pronouns.describe()>>. You can change your name and pronouns anytime from "Name and pronouns" in the sidebar.</div>
 
-[[Head inside|Inside]]
-
 :: Inside {"position":"600,300","size":"100,100"}
-Inside, it's warm. {name} hangs {their} jacket by the door. {They've} got the whole afternoon free, so {they} {pour/pours} more coffee and {curl/curls} up with a good book.
+Inside, it's warm. {name} sets Sam's paper bag on the counter and hangs {their} jacket by the door. {They've} got the whole afternoon free, so {they} {pour/pours} more coffee, {grab/grabs} the muffin, and {curl/curls} up with a good book.
 
 [[Back out to the porch|Porch]]

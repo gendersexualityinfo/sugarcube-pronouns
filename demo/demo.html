@@ -914,13 +914,17 @@ Nothing links to this passage, so players never see it.</tw-passagedata><tw-pass
 
 &lt;&lt;say &quot;jo&quot; &quot;Jo&quot;&gt;&gt;Leave {them} alone, Sam. {They&#x27;ve} had a long week.&lt;&lt;/say&gt;&gt;
 
-&lt;&lt;linkreplace &quot;Wave back&quot;&gt;&gt;{name} waves back and laughs. &quot;I saved {them@sam} a muffin,&quot; Sam tells Jo. &quot;{They@sam} {deserve/deserves} it.&quot; Sam jogs over with a paper bag.&lt;&lt;/linkreplace&gt;&gt;
+&lt;&lt;linkreplace &quot;Wave back&quot;&gt;&gt;{name} waves back and laughs. &quot;I saved {them@sam} a muffin,&quot; Sam tells Jo. &quot;{They@sam} {deserve/deserves} it.&quot; Sam jogs over with a paper bag.
+
+&lt;&lt;linkreplace &quot;Say thanks&quot;&gt;&gt;&lt;&lt;say &quot;me&quot; &quot;{name}&quot;&gt;&gt;Thank you, Sam! You didn&#x27;t have to do that.&lt;&lt;/say&gt;&gt;
+
+&lt;&lt;say &quot;sam&quot; &quot;Sam&quot;&gt;&gt;Sure I did. Go eat it while it&#x27;s warm.&lt;&lt;/say&gt;&gt;
+
+[[Head inside|Inside]]&lt;&lt;/linkreplace&gt;&gt;&lt;&lt;/linkreplace&gt;&gt;
 
 &lt;div class=&quot;note&quot;&gt;How this demo works: the narrator and Jo use your first set of pronouns. If you picked two sets, Sam uses your second set. With any pronouns, each character picks she, he, or they, and keeps it.
 
-Your pronouns right now: &lt;&lt;= setup.pronouns.describe()&gt;&gt;. You can change your name and pronouns anytime from &quot;Name and pronouns&quot; in the sidebar.&lt;/div&gt;
-
-[[Head inside|Inside]]</tw-passagedata><tw-passagedata pid="7" name="Inside" tags="" position="600,300" size="100,100">Inside, it&#x27;s warm. {name} hangs {their} jacket by the door. {They&#x27;ve} got the whole afternoon free, so {they} {pour/pours} more coffee and {curl/curls} up with a good book.
+Your pronouns right now: &lt;&lt;= setup.pronouns.describe()&gt;&gt;. You can change your name and pronouns anytime from &quot;Name and pronouns&quot; in the sidebar.&lt;/div&gt;</tw-passagedata><tw-passagedata pid="7" name="Inside" tags="" position="600,300" size="100,100">Inside, it&#x27;s warm. {name} sets Sam&#x27;s paper bag on the counter and hangs {their} jacket by the door. {They&#x27;ve} got the whole afternoon free, so {they} {pour/pours} more coffee, {grab/grabs} the muffin, and {curl/curls} up with a good book.
 
 [[Back out to the porch|Porch]]</tw-passagedata></tw-storydata>
 	<script id="script-sugarcube" type="text/javascript">
