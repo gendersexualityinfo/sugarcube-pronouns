@@ -65,12 +65,14 @@
 	function clean(v) {
 		return String(v || "").toLowerCase().replace(/[^\p{L}'’\- ]/gu, "").replace(/\s+/g, " ").trim();
 	}
-	/* names: trimmed, free of anything SugarCube reads as markup, and
-	   starting with a capital letter. The rest stays as the player typed
-	   it, so "McKenzie" and "DeShawn" keep their capitals. */
+	/* names: trimmed, free of anything SugarCube reads as markup, and with
+	   a capital letter at the start of each word (after a space or a
+	   hyphen). The rest stays as the player typed it, so "mary jane"
+	   becomes "Mary Jane," "jean-luc" becomes "Jean-Luc," and "McKenzie"
+	   keeps its capitals. */
 	function fixName(raw) {
 		var n = String(raw == null ? "" : raw).replace(/[<>\[\]{}$_`\\|@]/g, "").replace(/\s+/g, " ").trim();
-		return n ? n.charAt(0).toUpperCase() + n.slice(1) : "";
+		return n.replace(/(^|[\s-])(\p{L})/gu, function (m, before, letter) { return before + letter.toUpperCase(); });
 	}
 	function complete(set) { return !!set && FIELDS.every(function (f) { return set[f]; }); }
 	function sameSet(a, b) { return !!a && !!b && FIELDS.every(function (f) { return a[f] === b[f]; }); }
