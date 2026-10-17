@@ -248,6 +248,6 @@ https://github.com/gendersexualityinfo/sugarcube-pronouns
 
 If this helped you, a star (the ☆ button at the top of this page) helps other Twine folks find it.
 
-Found a bug, or want something added? [Open an issue](../../issues) and tell me. Ideas for updates are welcome too.
+Found a bug, or want something added? [Open an issue](../../issues) and tell me. Ideas for updates are welcome, too.
 
-If you use this in a game, I'd love to see it! You can find my games and apps at [charlieocean.itch.io](https://charlieocean.itch.io), and more of my work at [gendersexuality.info](https://gendersexuality.info).
+If you use this in a game, I'd love to see it! You can find my games and apps at [charlieocean.itch.io](https://charlieocean.itch.io) and [gendersexuality.info](https://gendersexuality.info).
