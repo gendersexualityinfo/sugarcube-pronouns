@@ -15,7 +15,7 @@ Made by Charlie Ocean (they/them). Tested with SugarCube 2.37.3.
 
 ## Try it first
 
-There are two short demos in the `demo` folder. Download one and open it in your browser:
+There are two short demos in the `demo` folder. To get one, click the file here on GitHub, then the download button at the top right of the file. Open the downloaded file in your browser:
 
 - `demo.html`: the player picks their own first name and pronouns, including two sets.
 - `character-demo.html`: the player picks the name and pronouns of someone they met at a bookstore.
@@ -71,7 +71,7 @@ Start a token with a capital letter for a capital: `{They}`, `{Their}`, `{They'r
 
 For the player's first name, write `{name}`, or `{name's}` for the possessive. If the name is blank, it says "Friend" instead, so a sentence never ends up with a gap.
 
-**Verbs:** write the they form first, then the she/he form, with a slash: `{are/is}`, `{run/runs}`, `{have/has}`. A verb matches the nearest `{they}` before it.
+**Verbs:** write the they form first, then the she/he form, with a slash: `{are/is}`, `{were/was}`, `{run/runs}`, `{have/has}`. The they form always goes first, even if you're used to writing "is/are." A verb matches the nearest pronoun before it: `{they}`, `{they're}`, `{they've}`, or a character's `{crush:they}`. That works across line breaks, links, and bold or italic text too.
 
 ```
 {name} grabs {their} coat. {They} {run/runs} for the bus.
@@ -166,7 +166,7 @@ More options for `setup.pronouns.character()`:
 |---|---|
 | `names` | The names to choose from, shown as buttons. Leave it out for a first-name box instead |
 | `name` | The stand-in name, until the player picks |
-| `pronouns` | The stand-in pronouns: `"she"`, `"he"`, or `"they"` (or a set of your own, like `{ subj: "ey", obj: "em", det: "eir", poss: "eirs", refl: "emself" }`) |
+| `pronouns` | The stand-in pronouns: `"she"`, `"he"`, `"they"`, `"xe"`, or `"ze"` (or a set of your own, like `{ subj: "ey", obj: "em", det: "eir", poss: "eirs", refl: "emself" }`) |
 | `customPronouns` | Set to `false` to offer only she/her, he/him, and they/them, without the boxes for writing your own |
 | `title` | The title of the window that `setup.pronouns.open("crush")` opens |
 
@@ -195,6 +195,8 @@ setup.pronouns.config.requireName = false;
 - To show a token as written, put it inside `data-pronouns="off"`, or in code formatting (SugarCube's `{{{ }}}`).
 - When a player changes their name or pronouns, the change sticks. Going back a screen, reloading, or loading an earlier save from the same playthrough uses the new ones. Saves from other playthroughs keep their own.
 - Until the player picks, everyone uses they/them.
+- Names keep the capital letters the player types, so "Mary Jane," "Jean-Luc," and all-lowercase names come out the way they wrote them.
+- SugarCube records changes when the player moves to the next screen. So if a player changes their pronouns and saves on that same screen, the save holds the old ones. In the same browser, the newest choice still wins, so this only matters for a save exported to a file and loaded somewhere else.
 - To build your own start screen instead, use plain `<<pronounpicker>>`. It shows just the picker, without the name box or button, and saves the choice as the player makes it. `setup.pronouns.chosen()` tells you whether they've picked.
 
 ## For your own code
@@ -216,6 +218,14 @@ setup.pronouns.chooseFor("crush", "she", "Maya")  // pick for them from code
 ```
 
 Your own set works too: `setup.pronouns.choose({ subj: "ey", obj: "em", det: "eir", poss: "eirs", refl: "emself" })`.
+
+To react when a choice changes, listen for `:pronounschange`. It passes `""` for the player, or the character's label:
+
+```js
+$(document).on(":pronounschange", function (event, who) {
+	// who is "" for the player, or a label like "crush"
+});
+```
 
 ## Credits
 

@@ -39,24 +39,24 @@ Nothing links to this passage, so players never see it."""),
 <<pronounpicker "Porch" "Start the story">>"""),
     ("Porch", "", """It's a cool fall morning. {name} steps out onto the porch with a mug of coffee. {They} {sit/sits} on the top step and {wave/waves} to the neighbors across the street.
 
-<<say "jo" "Jo">>Morning, {name}! You're up early.<</say>>
+<<say "marisol" "Marisol">>Morning, {name}! You're up early.<</say>>
 
-<<say "sam" "Sam">>Jo, look. {name's} got the good mug out. {They're} having a nice day.<</say>>
+<<say "pip" "Pip">>Marisol, look. {name's} got the good mug out. {They're} having a nice day.<</say>>
 
-<<say "jo" "Jo">>Leave {them} alone, Sam. {They've} had a long week.<</say>>
+<<say "marisol" "Marisol">>Leave {them} alone, Pip. {They've} had a long week.<</say>>
 
-<<linkreplace "Wave back">>{name} waves back and laughs. "I saved {them@sam} a muffin," Sam tells Jo. "{They@sam} {deserve/deserves} it." Sam jogs over with a paper bag.
+<<linkreplace "Wave back">>{name} waves back and laughs. "I saved {them@pip} a muffin," Pip tells Marisol. "{They@pip} {deserve/deserves} it." Pip jogs over with a paper bag.
 
-<<linkreplace "Say thanks">><<say "me" "{name}">>Thank you, Sam! You didn't have to do that.<</say>>
+<<linkreplace "Say thanks">><<say "me" "{name}">>Thank you, Pip! You didn't have to do that.<</say>>
 
-<<say "sam" "Sam">>Sure I did. Go eat it while it's warm.<</say>>
+<<say "pip" "Pip">>Sure I did. Go eat it while it's warm.<</say>>
 
 [[Head inside|Inside]]<</linkreplace>><</linkreplace>>
 
-<div class="note">How this demo works: the narrator and Jo use your first set of pronouns. If you picked two sets, Sam uses your second set. With any pronouns, each character picks she, he, or they, and keeps it.
+<div class="note">How this demo works: the narrator and Marisol use your first set of pronouns. If you picked two sets, Pip uses your second set. With any pronouns, each character picks she, he, or they, and keeps it.
 
 Your pronouns right now: <<= setup.pronouns.describe()>>. You can change your name and pronouns anytime from "Name and pronouns" in the sidebar.</div>"""),
-    ("Inside", "", """Inside, it's warm. {name} sets Sam's paper bag on the counter and hangs {their} jacket by the door. {They've} got the whole afternoon free, so {they} {pour/pours} more coffee, {grab/grabs} the muffin, and {curl/curls} up with a good book.
+    ("Inside", "", """Inside, it's warm. {name} sets Pip's paper bag on the counter and hangs {their} jacket by the door. {They've} got the whole afternoon free, so {they} {pour/pours} more coffee, {grab/grabs} the muffin, and {curl/curls} up with a good book.
 
 [[Back out to the porch|Porch]]"""),
 ]
@@ -75,8 +75,8 @@ PLAYER_LAYOUT = {
 }
 
 PLAYER_JS = """
-/* demo only: Sam uses the second set if the player picks two */
-setup.pronouns.config.secondSetSpeakers = ["sam"];
+/* demo only: Pip uses the second set if the player picks two */
+setup.pronouns.config.secondSetSpeakers = ["pip"];
 """
 
 CHARACTER_PASSAGES = [

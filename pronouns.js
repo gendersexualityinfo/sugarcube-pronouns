@@ -65,10 +65,11 @@
 	function clean(v) {
 		return String(v || "").toLowerCase().replace(/[^\p{L}'’\- ]/gu, "").replace(/\s+/g, " ").trim();
 	}
-	/* names: trimmed, capitalized, and free of anything SugarCube reads as markup */
+	/* names: trimmed and free of anything SugarCube reads as markup. The
+	   capital letters stay just as the player typed them, so names like
+	   "Mary Jane," "Jean-Luc," or an all-lowercase name come out right. */
 	function fixName(raw) {
-		var n = String(raw == null ? "" : raw).replace(/[<>\[\]{}$_`\\|@]/g, "").replace(/\s+/g, " ").trim();
-		return n ? n.charAt(0).toUpperCase() + n.slice(1) : "";
+		return String(raw == null ? "" : raw).replace(/[<>\[\]{}$_`\\|@]/g, "").replace(/\s+/g, " ").trim();
 	}
 	function complete(set) { return !!set && FIELDS.every(function (f) { return set[f]; }); }
 	function sameSet(a, b) { return !!a && !!b && FIELDS.every(function (f) { return a[f] === b[f]; }); }
@@ -166,16 +167,23 @@
 	var TOKEN = /\{(?:([a-z][\w-]*):)?(?:(they)['’](re|ve|ll|d)|(they|them|their|theirs|themself)|(name)(['’]s)?|([\p{L}'’\- ]+)\/([\p{L}'’\- ]+))(?:@([^{}@\s]+))?\}/giu;
 
 	function fill(text, speaker) { return fillWith(text, speaker, resolve); }
-	function fillWith(text, speaker, resolver) {
+	/* memory (optional) carries "who the last {they} was about" from one
+	   piece of text to the next, so a verb still follows a pronoun across
+	   a line break, a link, or bold and italic text */
+	function fillWith(text, speaker, resolver, memory) {
 		var s = String(text == null ? "" : text);
 		if (s.indexOf("{") === -1) { return s; }
 		/* who the last {they} was about, for the verbs after it */
-		var subject = { who: speaker, person: "" };
+		var subject = memory && memory.subject ? memory.subject : { who: speaker, person: "" };
+		function about(who, person) {
+			subject = { who: who, person: person };
+			if (memory) { memory.subject = subject; }
+		}
 		return s.replace(TOKEN, function (m, person, ct, c, word, nm, poss, plural, singular, at) {
 			var who = at || speaker, w;
 			person = person ? key(person) : "";
 			if (ct) {
-				subject = { who: who, person: person };
+				about(who, person);
 				w = resolver(who, person);
 				var subj = ct.charAt(0) === "T" ? cap(w.set.subj) : w.set.subj;
 				c = c.toLowerCase();
@@ -185,7 +193,7 @@
 				return subj + (w.named ? " would" : "'d");
 			}
 			if (word) {
-				if (word.toLowerCase() === "they") { subject = { who: who, person: person }; }
+				if (word.toLowerCase() === "they") { about(who, person); }
 				var out = resolver(who, person).set[FORMS[word.toLowerCase()]];
 				return word.charAt(0) === "T" ? cap(out) : out;
 			}
@@ -209,11 +217,16 @@
 	function skipped(el) {
 		return !el || !!SKIP[el.nodeName] || !!(el.closest && el.closest("[data-pronouns='off']"));
 	}
-	function fillTextNode(t) {
+	/* walk: what one pass over the page remembers between pieces of text.
+	   It starts over whenever the speaker changes. */
+	function fillTextNode(t, walk) {
 		var v = t.nodeValue;
 		if (!v || v.indexOf("{") === -1 || skipped(t.parentElement)) { return; }
 		var host = t.parentElement.closest("[data-speaker]");
-		var out = fill(v, host ? host.getAttribute("data-speaker") : "");
+		var speaker = host ? host.getAttribute("data-speaker") : "";
+		walk = walk || {};
+		if (walk.host !== host) { walk.host = host; walk.subject = null; }
+		var out = fillWith(v, speaker, resolve, walk);
 		if (out !== v) { t.nodeValue = out; }
 	}
 	function fillIn(node) {
@@ -225,7 +238,8 @@
 		while (walker.nextNode()) {
 			if (walker.currentNode.nodeValue.indexOf("{") !== -1) { found.push(walker.currentNode); }
 		}
-		found.forEach(fillTextNode);
+		var walk = {};
+		found.forEach(function (t) { fillTextNode(t, walk); });
 	}
 	$(document).on(":passagerender", function (ev) { fillIn(ev.content); });
 	new MutationObserver(function (records) {
@@ -337,7 +351,7 @@
 	   nameFn: where the sample sentence gets the name.
 	   person: another character's label, or "" for the player.
 	   Returns { read, check, paint }. */
-	function buildPicker(root, live, nameFn, person) {
+	function buildPicker(root, live, nameFn, person, onEnter) {
 		var forPlayer = !person, c0 = character(person);
 		var custom = forPlayer || c0.customPronouns !== false;
 		nameFn = nameFn || function () { return nameOf(person); };
@@ -431,7 +445,9 @@
 				});
 			}
 			$root.find(".pp-preview").empty().append(lines.map(function (l) { return $("<p></p>").text(l); }));
-			if (live && !problem(c)) { commit(c, forPlayer ? undefined : nameFn(), person); }
+			/* saved only once the player has done something, so showing the
+			   picker never counts as picking (stand-ins included) */
+			if (live && ready && !problem(c)) { commit(c, forPlayer ? undefined : nameFn(), person); }
 		}
 		function load(c) {
 			state = { mode: c && c.mode ? c.mode : "sets", second: !!(c && c.s2) };
@@ -453,6 +469,9 @@
 				paint();
 			})
 			.on("input", "input", paint)
+			.on("keydown", "input", function (ev) {
+				if (ev.key === "Enter") { ev.preventDefault(); if (onEnter) { onEnter(); } }
+			})
 			.on("click", ".pp-add", function () {
 				state.second = true;
 				paint();
@@ -473,7 +492,9 @@
 		else if (d) { load({ mode: d.mode, s1: sameRun ? rec.form.s1 : null, s2: sameRun ? rec.form.s2 : null }); }
 		else if (!forPlayer) { load({ mode: "sets", s1: characterDefault(person), s2: null }); }
 		else if (config.rememberLastChoice && rec && rec.form) { load(rec.form); }
+		var ready = false;
 		paint();
+		ready = true;
 
 		return { read: read, check: function () { return !showProblem(problem(read())); }, paint: paint };
 	}
@@ -571,7 +592,7 @@
 			if (live && !person) { State.variables[config.nameVariable] = name.value(); }
 			picker.paint();
 		}, person);
-		picker = buildPicker(wrap.querySelector(".pp-formpicker"), live, fallback, person);
+		picker = buildPicker(wrap.querySelector(".pp-formpicker"), live, fallback, person, done);
 		return { done: done, name: name, picker: picker };
 	}
 
@@ -634,7 +655,7 @@
 		   element each time; old buttons and their handlers go with the old one */
 		var body = document.createElement("div");
 		$(Dialog.body()).empty().append(body);
-		$(body).html('<p class="pp-note">Everyone uses these from the next screen on.</p><div class="pp-dialogform"></div>');
+		$(body).html('<p class="pp-note">Text already on this screen stays as it is. Everything new uses these.</p><div class="pp-dialogform"></div>');
 		var form = buildForm(body.querySelector(".pp-dialogform"), person, false,
 			'<button type="button" class="pp-save">Save</button><button type="button" class="pp-cancel">Cancel</button>',
 			function (name, choice) {

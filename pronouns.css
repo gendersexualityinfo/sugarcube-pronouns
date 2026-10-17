@@ -38,12 +38,18 @@
 	border-radius: 0.4em;
 	cursor: pointer;
 }
-.pp-preset[aria-pressed="true"] { font-weight: bold; outline: 3px solid currentColor; outline-offset: 1px; }
+/* every set button has a thick border, so picking one doesn't shift the
+   layout; the picked one's border turns the text color, and it gets a
+   check mark and bold text. The outline is kept for keyboard focus. */
+.pp-preset { border-width: 3px; border-style: solid; }
+.pp-preset[aria-pressed="true"] { font-weight: bold; border-color: currentColor; }
 .pp-preset[aria-pressed="true"]::before { content: "✓ "; }
 .pp-picker button:focus-visible,
+.pp-form button:focus-visible,
 .pp-dialog button:focus-visible,
 .pp-picker input:focus-visible,
-.pp-dialog input:focus-visible { outline: 3px solid currentColor; outline-offset: 2px; }
+.pp-form input:focus-visible,
+.pp-dialog input:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; }
 
 /* the five boxes wrap to fit any screen and any text size. Each box sits
    at the bottom of its label, so boxes in a row line up even when one
@@ -53,10 +59,13 @@
 .pp-namefield { display: flex; flex-direction: column; justify-content: flex-end; gap: 0.15em; flex: 1 1 9em; line-height: 1.3; }
 .pp-namefield { margin-bottom: 0.5em; }
 .pp-field input,
-.pp-namefield input { font: inherit; min-width: 0; width: 100%; box-sizing: border-box; padding: 0.35em 0.5em; margin-top: 0.2em; }
+.pp-namefield input { font: inherit; min-width: 0; width: 100%; box-sizing: border-box; padding: 0.35em 0.5em; margin-top: 0.2em;
+	/* a border in the text color, so the boxes are easy to see in any theme */
+	border: 1px solid currentColor; }
 .pp-word { font-weight: bold; }
 .pp-example { opacity: 0.85; font-size: 0.9em; }
 .pp-picker input[aria-invalid="true"],
+.pp-form input[aria-invalid="true"],
 .pp-dialog input[aria-invalid="true"] { outline: 3px dashed currentColor; outline-offset: 2px; }
 
 .pp-alert { font-weight: bold; margin: 0.5em 0; }
