@@ -563,16 +563,31 @@ setup.pronouns.config.secondSetSpeakers = ["sam"];
 .say { margin: 1em 0; padding: 0.5em 1em; border-left: 4px solid currentColor; }
 
 
-:: StoryInit
+:: Read me first {"position":"50,50","size":"200,200"}
+This is the demo for Pronouns for SugarCube. To try it, choose Build, then Play.
+
+What each passage does:
+
+Start: the player types a name and picks pronouns.
+Porch and Inside: two short scenes that use the pronoun tokens.
+StoryInit: starts the name out blank.
+StoryMenu: adds "Name and pronouns" to the sidebar, so players can change them anytime.
+Widgets: a "say" widget, so each character's lines use that character's pronouns.
+
+The picker's code is in Story, then JavaScript, and its styles are in Story, then Stylesheet.
+
+Nothing links to this passage, so players never see it.
+
+:: StoryInit {"position":"50,300","size":"100,100"}
 <<set $playerName to "">>
 
-:: StoryMenu
+:: StoryMenu {"position":"175,300","size":"100,100"}
 <<link "Name and pronouns">><<run setup.pronouns.open()>><</link>>
 
-:: Widgets [widget]
+:: Widgets [widget] {"position":"50,425","size":"100,100"}
 <<widget "say" container>><div class="say" @data-speaker="_args[0]"><strong>_args[1]:</strong> _contents</div><</widget>>
 
-:: Start
+:: Start {"position":"375,50","size":"100,100"}
 What's your name?
 <<textbox "$playerName" "">>
 
@@ -580,7 +595,7 @@ What's your name?
 
 [[Start the story|Porch]]
 
-:: Porch
+:: Porch {"position":"375,300","size":"100,100"}
 It's a gray morning. $playerName steps out onto the porch, and {they're} glad {they} brought a sweater. {They} {sit/sits} on the top step with {their} coffee.
 
 <<say "sam" "Sam">>Morning! I saved {them} a muffin. {They're} going to love it.<</say>>
@@ -595,7 +610,7 @@ You can change your name and pronouns anytime from "Name and pronouns" in the me
 
 [[Go back inside|Inside]]
 
-:: Inside
+:: Inside {"position":"600,300","size":"100,100"}
 Inside, it's warm. $playerName hangs up {their} sweater. {They've} got the whole afternoon free, so {they} {make/makes} tea and {treat/treats} {themself} to the last muffin.
 
 [[Back to the porch|Porch]]

@@ -16,6 +16,19 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 IFID = "7B1E2C4A-5D3F-4E8B-9A61-2F0C8D4B7E35"
 
 PASSAGES = [
+    ("Read me first", "", """This is the demo for Pronouns for SugarCube. To try it, choose Build, then Play.
+
+What each passage does:
+
+Start: the player types a name and picks pronouns.
+Porch and Inside: two short scenes that use the pronoun tokens.
+StoryInit: starts the name out blank.
+StoryMenu: adds "Name and pronouns" to the sidebar, so players can change them anytime.
+Widgets: a "say" widget, so each character's lines use that character's pronouns.
+
+The picker's code is in Story, then JavaScript, and its styles are in Story, then Stylesheet.
+
+Nothing links to this passage, so players never see it."""),
     ("StoryInit", "", '<<set $playerName to "">>'),
     ("StoryMenu", "", '<<link "Name and pronouns">><<run setup.pronouns.open()>><</link>>'),
     ("Widgets", "widget", """<<widget "say" container>><div class="say" @data-speaker="_args[0]"><strong>_args[1]:</strong> _contents</div><</widget>>"""),
@@ -44,6 +57,19 @@ You can change your name and pronouns anytime from "Name and pronouns" in the me
 [[Start over|Start]]"""),
 ]
 
+# Where each passage sits on Twine's story map: (x, y, size). The notes and
+# setup passages go in a column on the left; the story runs on the right,
+# laid out so no arrow crosses a passage.
+LAYOUT = {
+    "Read me first": (50, 50, "200,200"),
+    "StoryInit": (50, 300, "100,100"),
+    "StoryMenu": (175, 300, "100,100"),
+    "Widgets": (50, 425, "100,100"),
+    "Start": (375, 50, "100,100"),
+    "Porch": (375, 300, "100,100"),
+    "Inside": (600, 300, "100,100"),
+}
+
 SETUP_JS = """
 /* demo only: Sam uses the second set if the player picks two */
 setup.pronouns.config.secondSetSpeakers = ["sam"];
@@ -70,9 +96,9 @@ def twee():
         ":: Story Stylesheet [stylesheet]\n" + css + "\n",
     ]
     for name, tags, text in PASSAGES:
-        if tags == "script-extra":
-            continue
-        out.append(":: %s%s\n%s\n" % (name, " [%s]" % tags if tags else "", text))
+        x, y, size = LAYOUT[name]
+        meta = '{"position":"%d,%d","size":"%s"}' % (x, y, size)
+        out.append(":: %s%s %s\n%s\n" % (name, " [%s]" % tags if tags else "", meta, text))
     return "\n".join(out)
 
 
@@ -84,12 +110,11 @@ def page(engine_file):
     pid = 0
     parts = []
     for name, tags, text in PASSAGES:
-        if tags == "script-extra":
-            continue
+        x, y, size = LAYOUT[name]
         pid += 1
-        parts.append('<tw-passagedata pid="%d" name="%s" tags="%s" position="%d,100" size="100,100">%s</tw-passagedata>'
-                     % (pid, html.escape(name), tags, pid * 150, html.escape(text)))
-    start = 1 + [p[0] for p in PASSAGES if p[1] != "script-extra"].index("Start")
+        parts.append('<tw-passagedata pid="%d" name="%s" tags="%s" position="%d,%d" size="%s">%s</tw-passagedata>'
+                     % (pid, html.escape(name), tags, x, y, size, html.escape(text)))
+    start = 1 + [p[0] for p in PASSAGES].index("Start")
     data = ('<tw-storydata name="Pronouns demo" startnode="%d" creator="make-demo.py" creator-version="1" '
             'format="SugarCube" format-version="2.37.3" ifid="%s" options="" tags="" zoom="1" hidden>'
             '<style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">%s</style>'

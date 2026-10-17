@@ -13,8 +13,8 @@ Made by Charlie Ocean (they/them). Tested with SugarCube 2.37.3.
 
 ## Setup
 
-1. Copy everything in `pronouns.js` into your story's JavaScript (in Twine: **Story → Details → JavaScript**).
-2. Copy everything in `pronouns.css` into your story's stylesheet (**Story → Details → Stylesheet**).
+1. Copy everything in `pronouns.js` into your story's JavaScript (in Twine: **Story → JavaScript**).
+2. Copy everything in `pronouns.css` into your story's stylesheet (**Story → Stylesheet**).
 3. Put the picker in a passage near the start:
 
    ```
@@ -109,7 +109,7 @@ Your own set works too: `setup.pronouns.choose({ subj: "ey", obj: "em", det: "ei
 
 ## Try the demo
 
-`demo/demo.twee` is a short story that uses all of this. In Twine, choose **Library → Import** and pick the file.
+`demo/demo.twee` is a short story that uses all of this. In Twine, choose **Library → Import** and pick the file. Its "Read me first" passage explains what each passage does.
 
 ## Credits
 
