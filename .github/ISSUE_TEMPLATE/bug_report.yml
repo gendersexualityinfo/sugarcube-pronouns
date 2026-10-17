@@ -1,0 +1,55 @@
+name: Something isn't working
+description: Tell me what went wrong.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for letting me know! A few details help me find the problem faster.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you see? An error message, the wrong pronoun, or something else?
+      placeholder: "I picked she/her, but the line said \"They sits on the porch.\""
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: "\"She sits on the porch.\""
+  - type: textarea
+    id: passage
+    attributes:
+      label: The passage text or code, if it helps
+      description: Paste the line or passage that came out wrong.
+      render: text
+  - type: dropdown
+    id: picked
+    attributes:
+      label: What was picked?
+      multiple: true
+      options:
+        - One set of pronouns
+        - Two sets
+        - Any pronouns
+        - Just my name
+        - Another character's name and pronouns
+        - Not sure
+  - type: input
+    id: version
+    attributes:
+      label: Version of Pronouns for SugarCube
+      description: It's at the top of pronouns.js.
+      placeholder: "1.0.0"
+  - type: input
+    id: sugarcube
+    attributes:
+      label: SugarCube version
+      description: In Twine, choose Story, then Details, to see it.
+      placeholder: "2.37.3"
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and device
+      placeholder: "Safari on a Mac, or Chrome on an Android phone"
