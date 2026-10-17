@@ -40,6 +40,10 @@ Pronouns for SugarCube: demo
 		   for a name before moving on. false: a blank name is fine, and
 		   defaultName is used instead. */
 		requireName: true,
+		/* false: a new game starts with a blank name and no pronouns picked,
+		   so nobody sees the last player's choice on a shared computer.
+		   true: a new game fills in this browser's last name and pronouns. */
+		rememberLastChoice: false,
 		/* if the player picks two sets, these speakers use the second one.
 		   Everyone else uses the first. Example: ["sam", "rival"] */
 		secondSetSpeakers: [],
@@ -86,7 +90,8 @@ Pronouns for SugarCube: demo
 	   $pronouns is { mode, sets, seed, at }:
 	     mode   "sets" (one or two sets), "any", or "name"
 	     sets   the player's one or two sets (empty for "any" and "name")
-	     seed   decides which set each speaker uses with "any pronouns"
+	     seed   picked once per playthrough; decides which set each speaker
+	            uses with "any pronouns," and tells playthroughs apart
 	     at     when the player last chose (so the newest choice wins) */
 	function data() {
 		try { var d = State.variables.pronouns; return d && d.mode ? d : null; } catch (e) { return null; }
@@ -197,11 +202,12 @@ Pronouns for SugarCube: demo
 	}).observe(document.body, { childList: true, subtree: true });
 
 	/* ---------- the newest choice always wins ------------------------
-	   Going back, reloading, or loading an older save could bring back an
+	   Going back, reloading, or loading an earlier save could bring back an
 	   old name or old pronouns. So the newest choice is also kept in this
 	   browser, and every screen uses it if it's newer than what the story
-	   holds. A story where nothing has been picked yet is left alone, so a
-	   new player never gets the last player's name. */
+	   holds. It only applies within the same playthrough (the seed is
+	   picked once per playthrough), so loading someone else's save on a
+	   shared computer never takes on this player's choice. */
 	function storeKey() {
 		try { return "pronouns-" + (Config.saves.id || ""); } catch (e) { return "pronouns"; }
 	}
@@ -216,7 +222,7 @@ Pronouns for SugarCube: demo
 	}
 	$(document).on(":passagestart", function () {
 		var d = data(), rec = readStored();
-		if (!d || !rec || (rec.data.at || 0) <= (d.at || 0)) { return; }
+		if (!d || !rec || rec.data.seed !== d.seed || (rec.data.at || 0) <= (d.at || 0)) { return; }
 		try {
 			State.variables.pronouns = clone(rec.data);
 			if (rec.name) { State.variables[config.nameVariable] = rec.name; }
@@ -406,9 +412,10 @@ Pronouns for SugarCube: demo
 
 		/* start from what the story holds, or this browser's last answer */
 		var rec = readStored(), d = data();
+		var sameRun = !!(d && rec && rec.form && rec.data.seed === d.seed);
 		if (d && d.mode === "sets") { load({ mode: "sets", s1: d.sets[0], s2: d.sets[1] || null }); }
-		else if (d) { load({ mode: d.mode, s1: rec && rec.form ? rec.form.s1 : null, s2: rec && rec.form ? rec.form.s2 : null }); }
-		else if (rec && rec.form) { load(rec.form); }
+		else if (d) { load({ mode: d.mode, s1: sameRun ? rec.form.s1 : null, s2: sameRun ? rec.form.s2 : null }); }
+		else if (config.rememberLastChoice && rec && rec.form) { load(rec.form); }
 		paint();
 
 		return { read: read, check: function () { return !showProblem(problem(read())); }, paint: paint };
@@ -419,11 +426,15 @@ Pronouns for SugarCube: demo
 	   onEnter runs when the player presses Enter in the box. */
 	function nameField(where, onEnter) {
 		$(where).html(
-			'<label class="pp-namefield"><span class="pp-word">Your name</span>' +
+			'<label class="pp-namefield"><span class="pp-word">Your first name</span>' +
 			'<input type="text" class="pp-name" maxlength="30" autocomplete="off"></label>' +
-			'<p class="pp-alert pp-namealert" role="alert" hidden>Please type your name.</p>');
+			'<p class="pp-alert pp-namealert" role="alert" hidden>Please type your first name.</p>');
 		var box = where.querySelector(".pp-name"), alert = where.querySelector(".pp-namealert");
 		try { box.value = fixName(State.variables[config.nameVariable]); } catch (e) {}
+		if (!box.value && !data() && config.rememberLastChoice) {
+			var rec = readStored();
+			if (rec && rec.name) { box.value = fixName(rec.name); }
+		}
 		$(box)
 			.on("input", function () {
 				if (this.value.trim()) { this.removeAttribute("aria-invalid"); alert.hidden = true; }

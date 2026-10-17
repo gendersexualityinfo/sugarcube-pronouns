@@ -1,19 +1,23 @@
-"""Builds demo/demo.twee from the demo passages below plus pronouns.js and
-pronouns.css, so the demo always has the current code.
+"""Builds the files people download, so they always have the current code:
 
-    python3 tools/make-demo.py
+    pronouns.twee     the picker's JavaScript and styles, for Tweego users
+    demo/demo.twee    the demo story, to import into Twine
 
-Optional: pass a compiled SugarCube 2 game (.html) to also write a playable
-demo page, using that file's copy of the SugarCube engine:
+    python3 tools/build.py
 
-    python3 tools/make-demo.py path/to/any-sugarcube-game.html out.html
+To also build demo/demo.html (a playable demo that Twine can import too),
+point it at SugarCube 2's format.js:
+
+    python3 tools/build.py path/to/sugarcube-2/format.js
 """
 import html
+import json
 import pathlib
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 IFID = "7B1E2C4A-5D3F-4E8B-9A61-2F0C8D4B7E35"
+TITLE = "Pronouns for SugarCube: demo"
 
 PASSAGES = [
     ("Read me first", "", """This is the demo for Pronouns for SugarCube. To try it, choose Build, then Play.
@@ -89,7 +93,7 @@ def code():
 def twee():
     js, css = code()
     out = [
-        ":: StoryTitle\nPronouns for SugarCube: demo\n",
+        ":: StoryTitle\n" + TITLE + "\n",
         ':: StoryData\n{\n  "ifid": "%s",\n  "format": "SugarCube",\n  "format-version": "2.37.3",\n  "start": "Start"\n}\n' % IFID,
         ":: Story JavaScript [script]\n" + js + "\n",
         ":: Story Stylesheet [stylesheet]\n" + css + "\n",
@@ -101,11 +105,25 @@ def twee():
     return "\n".join(out)
 
 
-def page(engine_file):
+def library_twee():
+    js = (ROOT / "pronouns.js").read_text(encoding="utf-8")
+    css = (ROOT / "pronouns.css").read_text(encoding="utf-8")
+    return ("/* Pronouns for SugarCube 2, by Charlie Ocean. Public domain (The Unlicense).\n"
+            "   For Tweego: add this file to your project. Twine users can paste\n"
+            "   pronouns.js and pronouns.css into Story > JavaScript and Story > Stylesheet. */\n\n"
+            ":: Pronouns JavaScript [script]\n" + js + "\n\n"
+            ":: Pronouns Stylesheet [stylesheet]\n" + css + "\n")
+
+
+def page(format_js):
+    """The demo as a playable page, built the same way Twine publishes a story."""
     js, css = code()
-    src = pathlib.Path(engine_file).read_text(encoding="utf-8")
-    a = src.index("<tw-storydata")
-    b = src.index("</tw-storydata>") + len("</tw-storydata>")
+    src = pathlib.Path(format_js).read_text(encoding="utf-8").strip()
+    if not src.startswith("window.storyFormat(") or not src.endswith(");"):
+        sys.exit("That doesn't look like a story format's format.js file.")
+    fmt = json.loads(src[len("window.storyFormat("):-2])
+    if fmt.get("name") != "SugarCube" or not str(fmt.get("version", "")).startswith("2."):
+        sys.exit("Please use SugarCube 2's format.js.")
     pid = 0
     parts = []
     for name, tags, text in PASSAGES:
@@ -114,23 +132,22 @@ def page(engine_file):
         parts.append('<tw-passagedata pid="%d" name="%s" tags="%s" position="%d,%d" size="%s">%s</tw-passagedata>'
                      % (pid, html.escape(name), tags, x, y, size, html.escape(text)))
     start = 1 + [p[0] for p in PASSAGES].index("Start")
-    data = ('<tw-storydata name="Pronouns demo" startnode="%d" creator="make-demo.py" creator-version="1" '
-            'format="SugarCube" format-version="2.37.3" ifid="%s" options="" tags="" zoom="1" hidden>'
+    data = ('<tw-storydata name="%s" startnode="%d" creator="Pronouns for SugarCube" creator-version="1" '
+            'format="SugarCube" format-version="%s" ifid="%s" options="" tags="" zoom="1" hidden>'
             '<style role="stylesheet" id="twine-user-stylesheet" type="text/twine-css">%s</style>'
             '<script role="script" id="twine-user-script" type="text/twine-javascript">%s</script>%s</tw-storydata>'
-            % (start, IFID, css, js, "".join(parts)))
-    head = src[:a]
-    # the engine file's own <title> is replaced so the page never names another game
-    t1, t2 = head.find("<title>"), head.find("</title>")
-    if t1 != -1 and t2 != -1:
-        head = head[:t1] + "<title>Pronouns demo</title>" + head[t2 + len("</title>"):]
-    return head + data + src[b:]
+            % (html.escape(TITLE), start, fmt["version"], IFID, css,
+               js, "".join(parts)))
+    out = fmt["source"].replace("{{STORY_NAME}}", html.escape(TITLE)).replace("{{STORY_DATA}}", data)
+    return out
 
 
 if __name__ == "__main__":
     (ROOT / "demo").mkdir(exist_ok=True)
+    (ROOT / "pronouns.twee").write_text(library_twee(), encoding="utf-8")
+    print("wrote pronouns.twee")
     (ROOT / "demo" / "demo.twee").write_text(twee(), encoding="utf-8")
     print("wrote demo/demo.twee")
-    if len(sys.argv) == 3:
-        pathlib.Path(sys.argv[2]).write_text(page(sys.argv[1]), encoding="utf-8")
-        print("wrote", sys.argv[2])
+    if len(sys.argv) == 2:
+        (ROOT / "demo" / "demo.html").write_text(page(sys.argv[1]), encoding="utf-8")
+        print("wrote demo/demo.html")
