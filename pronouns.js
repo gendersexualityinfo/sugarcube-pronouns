@@ -24,6 +24,10 @@
 		nameVariable: "playerName",
 		/* the name to use if the player leaves it blank */
 		defaultName: "Friend",
+		/* true: the start screen and the "name and pronouns" window ask
+		   for a name before moving on. false: a blank name is fine, and
+		   defaultName is used instead. */
+		requireName: true,
 		/* if the player picks two sets, these speakers use the second one.
 		   Everyone else uses the first. Example: ["sam", "rival"] */
 		secondSetSpeakers: [],
@@ -93,8 +97,8 @@
 	function resolve(who) {
 		var d = data();
 		who = String(who || "").trim().toLowerCase();
-		if (!d) { return { set: preset("they"), plural: true, named: false }; }
-		if (d.mode === "name") { return { set: nameSet(playerName()), plural: false, named: true }; }
+		if (!d) { return { set: preset("they"), plural: true, named: false, name: playerName() }; }
+		if (d.mode === "name") { return { set: nameSet(playerName()), plural: false, named: true, name: playerName() }; }
 		var set;
 		if (d.mode === "any") {
 			set = preset(ANY[pickFor(who || "narrator", d.seed)]);
@@ -105,24 +109,25 @@
 			}).indexOf(who) !== -1);
 			set = sets[second ? 1 : 0];
 		}
-		return { set: set, plural: String(set.subj).toLowerCase() === "they", named: false };
+		return { set: set, plural: String(set.subj).toLowerCase() === "they", named: false, name: playerName() };
 	}
 
 	/* ---------- filling in the tokens --------------------------------
 	   {they} {them} {their} {theirs} {themself}, capitalized as {They}
 	   and so on; {they're} {they've} {they'll} {they'd}; and verb pairs
-	   written plural first, like {are/is} or {run/runs}. Add @ and a
+	   written plural first, like {are/is} or {run/runs}; and {name} for
+	   the player's name ({name's} adds the 's). Add @ and a
 	   speaker to any token, like {they@sam}, to use that speaker's set.
 	   A verb pair follows the nearest {they} (or {they're} and so on)
 	   before it, so "{They@sam} {worry/worries}" agrees with Sam's set. */
-	var TOKEN = /\{(?:(they)['’](re|ve|ll|d)|(they|them|their|theirs|themself)|([\p{L}'’\- ]+)\/([\p{L}'’\- ]+))(?:@([^{}@\s]+))?\}/giu;
+	var TOKEN = /\{(?:(they)['’](re|ve|ll|d)|(they|them|their|theirs|themself)|(name)(['’]s)?|([\p{L}'’\- ]+)\/([\p{L}'’\- ]+))(?:@([^{}@\s]+))?\}/giu;
 
 	function fill(text, speaker) { return fillWith(text, speaker, resolve); }
 	function fillWith(text, speaker, resolver) {
 		var s = String(text == null ? "" : text);
 		if (s.indexOf("{") === -1) { return s; }
 		var subject = speaker;   /* who the last {they} was about */
-		return s.replace(TOKEN, function (m, ct, c, word, plural, singular, at) {
+		return s.replace(TOKEN, function (m, ct, c, word, nm, poss, plural, singular, at) {
 			var who = at || speaker, w;
 			if (ct) {
 				subject = who;
@@ -138,6 +143,10 @@
 				if (word.toLowerCase() === "they") { subject = who; }
 				var out = resolver(who).set[FORMS[word.toLowerCase()]];
 				return word.charAt(0) === "T" ? cap(out) : out;
+			}
+			if (nm) {
+				var n = resolver(who).name || playerName();
+				return poss ? n + "'s" : n;
 			}
 			return resolver(at || subject).plural ? plural : singular;
 		});
@@ -232,7 +241,7 @@
 		"I waved at {them}. {They'll} probably fix the fence.";
 
 	function sample(set, named, name) {
-		var w = { set: set, plural: !named && String(set.subj).toLowerCase() === "they", named: named };
+		var w = { set: set, plural: !named && String(set.subj).toLowerCase() === "they", named: named, name: name };
 		return "“That's " + name + " over there. " +
 			fillWith(named ? SAMPLE_NAMED : SAMPLE, "", function () { return w; }) + "”";
 	}
@@ -242,8 +251,8 @@
 		var names = { subj: "they", obj: "them", det: "their", poss: "theirs", refl: "themself" };
 		var extra = n === 2 ? '<span class="pp-sr">, second set</span>' : "";
 		return '<div class="pp-fields">' + FIELDS.map(function (f) {
-			return '<label class="pp-field"><span class="pp-word">' + names[f] + extra +
-				' <span class="pp-example">(“' + ex[f] + '”)</span></span>' +
+			return '<label class="pp-field"><span class="pp-word">' + names[f] + extra + '</span>' +
+				'<span class="pp-example">“' + ex[f] + '”</span>' +
 				'<input type="text" id="' + id + "-s" + n + "-" + f + '" data-field="' + f +
 				'" maxlength="20" autocomplete="off" spellcheck="false"></label>';
 		}).join("") + "</div>";
@@ -270,13 +279,13 @@
 			'<fieldset class="pp-group"><legend class="pp-legend">Your pronouns</legend>' +
 			'<p class="pp-note">Pick a set, or write your own.</p>' +
 			presetButtons(1) +
+			'<p class="pp-alert" role="alert" hidden></p>' +
 			'<div class="pp-set1">' + fieldsHtml(id, 1) + "</div>" +
 			'<button type="button" class="pp-add" aria-expanded="false" aria-controls="' + id + '-set2">+ Add a second set</button>' +
 			'<fieldset class="pp-set2" id="' + id + '-set2" hidden><legend class="pp-legend">Your second set</legend>' +
 			'<p class="pp-note">Some characters use this one.</p>' +
 			presetButtons(2) + fieldsHtml(id, 2) +
 			'<button type="button" class="pp-remove">Remove the second set</button></fieldset>' +
-			'<p class="pp-alert" role="alert" hidden></p>' +
 			'<div class="pp-preview"></div>' +
 			"</fieldset>");
 
@@ -289,24 +298,35 @@
 		function read() {
 			return { mode: state.mode, s1: readSet(1), s2: state.second ? readSet(2) : null };
 		}
+		/* what's missing, as [field, set number, message]. No field means
+		   nothing has been picked at all, so the set buttons get the focus. */
 		function problem(c) {
 			if (c.mode !== "sets") { return null; }
-			if (!complete(c.s1)) {
-				return [FIELDS.filter(function (f) { return !c.s1[f]; })[0], 1, "Pick a set, or fill in all five boxes."];
+			var empty1 = FIELDS.filter(function (f) { return !c.s1[f]; });
+			if (empty1.length === FIELDS.length) {
+				return [null, 1, "Please pick your pronouns, or write your own."];
+			}
+			if (empty1.length) {
+				return [empty1[0], 1, "Please fill in all five boxes, or pick a set above."];
 			}
 			if (c.s2 && !complete(c.s2)) {
-				return [FIELDS.filter(function (f) { return !c.s2[f]; })[0], 2, "Fill in all five boxes for your second set, or remove it."];
+				return [FIELDS.filter(function (f) { return !c.s2[f]; })[0], 2, "Please fill in all five boxes for your second set, or remove it."];
 			}
 			return null;
 		}
+		/* show the message and move the player to what's missing */
 		function showProblem(p) {
 			var alert = root.querySelector(".pp-alert");
 			if (!p) { alert.hidden = true; return false; }
 			alert.textContent = p[2];
 			alert.hidden = false;
-			var box = input(p[1], p[0]);
-			box.setAttribute("aria-invalid", "true");
-			box.focus();
+			if (p[0]) {
+				var box = input(p[1], p[0]);
+				box.setAttribute("aria-invalid", "true");
+				box.focus();
+			} else {
+				root.querySelector(".pp-preset").focus();
+			}
 			return true;
 		}
 		function paint() {
@@ -382,13 +402,74 @@
 		return { read: read, check: function () { return !showProblem(problem(read())); }, paint: paint };
 	}
 
-	/* <<pronounpicker>>: the picker, right in a passage. Every valid
-	   change is saved as the player makes it. */
+	/* ---------- the name box ------------------------------------------
+	   Used by the full start form and the "Name and pronouns" window.
+	   onEnter runs when the player presses Enter in the box. */
+	function nameField(where, onEnter) {
+		$(where).html(
+			'<label class="pp-namefield"><span class="pp-word">Your name</span>' +
+			'<input type="text" class="pp-name" maxlength="30" autocomplete="off"></label>' +
+			'<p class="pp-alert pp-namealert" role="alert" hidden>Please type your name.</p>');
+		var box = where.querySelector(".pp-name"), alert = where.querySelector(".pp-namealert");
+		try { box.value = fixName(State.variables[config.nameVariable]); } catch (e) {}
+		$(box)
+			.on("input", function () {
+				if (this.value.trim()) { this.removeAttribute("aria-invalid"); alert.hidden = true; }
+			})
+			.on("keydown", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); onEnter(); } });
+		return {
+			box: box,
+			value: function () { return fixName(box.value); },
+			/* false (and the player is sent back to the box) if a name is needed */
+			check: function () {
+				if (!config.requireName || fixName(box.value)) { return true; }
+				alert.hidden = false;
+				box.setAttribute("aria-invalid", "true");
+				box.focus();
+				return false;
+			}
+		};
+	}
+
+	/* <<pronounpicker>>: just the picker, for setups of your own. Every
+	   valid change is saved as the player makes it.
+
+	   <<pronounpicker "Chapter 1" "Start the story">>: the whole start
+	   screen. A name box, the picker, and a button that goes to the
+	   passage you name, once the name and pronouns are filled in. The
+	   button text is optional ("Continue" if you leave it out). */
 	Macro.add("pronounpicker", {
 		handler: function () {
-			var box = document.createElement("div");
-			this.output.appendChild(box);
-			buildPicker(box, true);
+			var goTo = this.args.length ? String(this.args[0]) : "";
+			if (goTo && !Story.has(goTo)) {
+				return this.error('there\'s no passage named "' + goTo + '"');
+			}
+			var wrap = document.createElement("div");
+			this.output.appendChild(wrap);
+			if (!goTo) { buildPicker(wrap, true); return; }
+
+			$(wrap).addClass("pp-form").attr("data-pronouns", "off").html(
+				'<div class="pp-formname"></div><div class="pp-formpicker"></div>' +
+				'<div class="pp-actions"><button type="button" class="pp-continue"></button></div>');
+			var button = wrap.querySelector(".pp-continue");
+			button.textContent = this.args.length > 1 ? String(this.args[1]) : "Continue";
+			var name, picker;
+			function go() {
+				if (!name.check() || !picker.check()) { return; }
+				State.variables[config.nameVariable] = name.value();
+				commit(picker.read());
+				Engine.play(goTo);
+			}
+			name = nameField(wrap.querySelector(".pp-formname"), go);
+			picker = buildPicker(wrap.querySelector(".pp-formpicker"), true, function () {
+				return name.value() || config.defaultName;
+			});
+			/* keep the story's copy of the name current as it's typed */
+			$(name.box).on("input", function () {
+				State.variables[config.nameVariable] = name.value();
+				picker.paint();
+			});
+			$(button).on("click", go);
 		}
 	});
 
@@ -402,42 +483,26 @@
 		$(Dialog.body()).empty().append(body);
 		$(body).attr("data-pronouns", "off").html(
 			'<p class="pp-note">Everyone uses these from the next screen on.</p>' +
-			'<label class="pp-namefield"><span class="pp-word">Your name</span>' +
-			'<input type="text" class="pp-name" maxlength="30" autocomplete="off"></label>' +
-			'<p class="pp-alert pp-namealert" role="alert" hidden>Your name can\'t be blank.</p>' +
+			'<div class="pp-dialogname"></div>' +
 			'<div class="pp-dialogpicker"></div>' +
 			'<div class="pp-actions"><button type="button" class="pp-save">Save</button>' +
 			'<button type="button" class="pp-cancel">Cancel</button></div>');
-		var nameBox = body.querySelector(".pp-name");
-		var current = "";
-		try { current = fixName(State.variables[config.nameVariable]); } catch (e) {}
-		nameBox.value = current;
-		var picker = buildPicker(body.querySelector(".pp-dialogpicker"), false, function () {
-			return fixName(nameBox.value) || config.defaultName;
-		});
-
+		var name, picker;
 		function save() {
-			var name = fixName(nameBox.value);
-			if (!name) {
-				$(body).find(".pp-namealert").prop("hidden", false);
-				nameBox.setAttribute("aria-invalid", "true");
-				nameBox.focus();
-				return;
-			}
-			if (!picker.check()) { return; }
-			commit(picker.read(), name);
+			if (!name.check() || !picker.check()) { return; }
+			commit(picker.read(), name.value());
 			Dialog.close();
 		}
+		name = nameField(body.querySelector(".pp-dialogname"), save);
+		picker = buildPicker(body.querySelector(".pp-dialogpicker"), false, function () {
+			return name.value() || config.defaultName;
+		});
+		$(name.box).on("input", function () { picker.paint(); });
 		$(body)
-			.on("input", ".pp-name", function () {
-				if (this.value.trim()) { this.removeAttribute("aria-invalid"); $(body).find(".pp-namealert").prop("hidden", true); }
-				picker.paint();
-			})
-			.on("keydown", ".pp-name", function (ev) { if (ev.key === "Enter") { ev.preventDefault(); save(); } })
 			.on("click", ".pp-save", save)
 			.on("click", ".pp-cancel", function () { Dialog.close(); });
 		Dialog.open();
-		nameBox.focus();
+		name.box.focus();
 	}
 
 	/* ---------- for your own code ------------------------------------- */
@@ -457,6 +522,8 @@
 		},
 		/* true once the player has picked */
 		chosen: function () { return !!data(); },
+		/* the player's name, or config.defaultName if it's blank */
+		name: function () { return playerName(); },
 		/* choose for the player from code: "she", "he", "they", "xe", "ze",
 		   "any", "name", or a set like { subj: "ey", obj: "em", det: "eir",
 		   poss: "eirs", refl: "emself" }. A second argument adds a second set. */

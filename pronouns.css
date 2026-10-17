@@ -9,7 +9,18 @@
 	border-radius: 0.5em;
 	padding: 0.75em 1em 1em;
 	margin: 0;
+	/* fieldsets won't shrink below their contents unless told to, which
+	   pushes them off narrow screens at big text sizes */
+	min-width: 0;
 }
+.pp-picker,
+.pp-form,
+.pp-field,
+.pp-namefield { min-width: 0; max-width: 100%; }
+.pp-preset,
+.pp-add,
+.pp-remove,
+.pp-actions button { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 .pp-set2 { margin-top: 1em; }
 .pp-legend { font-weight: bold; padding: 0 0.35em; }
 .pp-note { margin: 0.25em 0 0.75em; }
@@ -34,13 +45,16 @@
 .pp-picker input:focus-visible,
 .pp-dialog input:focus-visible { outline: 3px solid currentColor; outline-offset: 2px; }
 
-/* the five boxes wrap to fit any screen and any text size */
+/* the five boxes wrap to fit any screen and any text size. Each box sits
+   at the bottom of its label, so boxes in a row line up even when one
+   label wraps onto more lines than the others. */
 .pp-fields { display: flex; flex-wrap: wrap; gap: 0.75em 1em; margin-bottom: 0.75em; }
 .pp-field,
-.pp-namefield { display: flex; flex-direction: column; gap: 0.25em; flex: 1 1 9em; }
+.pp-namefield { display: flex; flex-direction: column; justify-content: flex-end; gap: 0.15em; flex: 1 1 9em; line-height: 1.3; }
 .pp-namefield { margin-bottom: 0.5em; }
 .pp-field input,
-.pp-namefield input { font: inherit; min-width: 0; width: 100%; box-sizing: border-box; padding: 0.35em 0.5em; }
+.pp-namefield input { font: inherit; min-width: 0; width: 100%; box-sizing: border-box; padding: 0.35em 0.5em; margin-top: 0.2em; }
+.pp-word { font-weight: bold; }
 .pp-example { opacity: 0.85; font-size: 0.9em; }
 .pp-picker input[aria-invalid="true"],
 .pp-dialog input[aria-invalid="true"] { outline: 3px dashed currentColor; outline-offset: 2px; }

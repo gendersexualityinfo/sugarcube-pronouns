@@ -20,8 +20,8 @@ PASSAGES = [
 
 What each passage does:
 
-Start: the player types a name and picks pronouns.
-Porch and Inside: two short scenes that use the pronoun tokens.
+Start: the player types a name and picks pronouns. The button won't move on until both are filled in.
+Porch and Inside: two short scenes that use the name and pronoun tokens.
 StoryInit: starts the name out blank.
 StoryMenu: adds "Name and pronouns" to the sidebar, so players can change them anytime.
 Widgets: a "say" widget, so each character's lines use that character's pronouns.
@@ -32,29 +32,27 @@ Nothing links to this passage, so players never see it."""),
     ("StoryInit", "", '<<set $playerName to "">>'),
     ("StoryMenu", "", '<<link "Name and pronouns">><<run setup.pronouns.open()>><</link>>'),
     ("Widgets", "widget", """<<widget "say" container>><div class="say" @data-speaker="_args[0]"><strong>_args[1]:</strong> _contents</div><</widget>>"""),
-    ("Start", "", """What's your name?
-<<textbox "$playerName" "">>
+    ("Start", "", """Welcome! This short story shows how the pronoun picker works.
 
-<<pronounpicker>>
+<<pronounpicker "Porch" "Start the story">>"""),
+    ("Porch", "", """It's a cool fall morning. {name} steps out onto the porch with a mug of coffee. {They} {sit/sits} on the top step and {wave/waves} to the neighbors across the street.
 
-[[Start the story|Porch]]"""),
-    ("Porch", "", """It's a gray morning. $playerName steps out onto the porch, and {they're} glad {they} brought a sweater. {They} {sit/sits} on the top step with {their} coffee.
+<<say "jo" "Jo">>Morning, {name}! You're up early.<</say>>
 
-<<say "sam" "Sam">>Morning! I saved {them} a muffin. {They're} going to love it.<</say>>
+<<say "sam" "Sam">>Jo, look. {name's} got the good mug out. {They're} having a nice day.<</say>>
 
-<<say "jo" "Jo">>Sam's been guarding that muffin all week. It's {theirs}, Sam. Hand it over.<</say>>
+<<say "jo" "Jo">>Leave {them} alone, Sam. {They've} had a long week.<</say>>
 
-<<linkreplace "Ask what's going on">>Sam grins at Jo. "Nothing! {They@sam} always {worry/worries} too much about breakfast." Sam passes over the muffin, and {they} {laugh/laughs}.<</linkreplace>>
+<<linkreplace "Wave back">>{name} waves back and laughs. Sam jogs over with a paper bag. "I saved {them@sam} a muffin," Sam tells Jo. "{They@sam} {deserve/deserves} it."<</linkreplace>>
 
-Right now your pronouns are: <<= setup.pronouns.describe() || "not picked yet">>.
+<div class="note">How this demo works: the narrator and Jo use your first set of pronouns. If you picked two sets, Sam uses your second set. With any pronouns, each character picks she, he, or they, and keeps it.
 
-You can change your name and pronouns anytime from "Name and pronouns" in the menu.
+Your pronouns right now: <<= setup.pronouns.describe()>>. You can change your name and pronouns anytime from "Name and pronouns" in the sidebar.</div>
 
-[[Go back inside|Inside]]"""),
-    ("Inside", "", """Inside, it's warm. $playerName hangs up {their} sweater. {They've} got the whole afternoon free, so {they} {make/makes} tea and {treat/treats} {themself} to the last muffin.
+[[Head inside|Inside]]"""),
+    ("Inside", "", """Inside, it's warm. {name} hangs {their} jacket by the door. {They've} got the whole afternoon free, so {they} {make/makes} tea and {curl/curls} up with a good book.
 
-[[Back to the porch|Porch]]
-[[Start over|Start]]"""),
+[[Back out to the porch|Porch]]"""),
 ]
 
 # Where each passage sits on Twine's story map: (x, y, size). The notes and
@@ -78,6 +76,7 @@ setup.pronouns.config.secondSetSpeakers = ["sam"];
 DEMO_CSS = """
 /* demo only */
 .say { margin: 1em 0; padding: 0.5em 1em; border-left: 4px solid currentColor; }
+.note { margin: 1.5em 0; padding: 0.75em 1em; border: 1px dashed currentColor; border-radius: 0.5em; font-size: 0.9em; }
 """
 
 

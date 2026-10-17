@@ -15,16 +15,13 @@ Made by Charlie Ocean (they/them). Tested with SugarCube 2.37.3.
 
 1. Copy everything in `pronouns.js` into your story's JavaScript (in Twine: **Story → JavaScript**).
 2. Copy everything in `pronouns.css` into your story's stylesheet (**Story → Stylesheet**).
-3. Put the picker in a passage near the start:
+3. Put the start screen in a passage near the beginning. Name the passage to go to next, and the button text:
 
    ```
-   What's your name?
-   <<textbox "$playerName" "">>
-
-   <<pronounpicker>>
-
-   [[Start the story|Chapter 1]]
+   <<pronounpicker "Chapter 1" "Start the story">>
    ```
+
+   That shows a name box, the pronoun picker, and the button. If something's missing when the player clicks the button, a short note asks for it ("Please type your name.") and moves them right to it.
 
 4. Let players change things later. Add this to your `StoryMenu` passage (make one if you don't have it):
 
@@ -32,7 +29,9 @@ Made by Charlie Ocean (they/them). Tested with SugarCube 2.37.3.
    <<link "Name and pronouns">><<run setup.pronouns.open()>><</link>>
    ```
 
-The player's name lives in `$playerName`. To use a different variable, change `nameVariable` at the top of `pronouns.js`.
+The player's name lives in `$playerName`. To use a different variable, change `nameVariable` at the top of `pronouns.js`. To let players skip the name, set `requireName` to `false` there. Then a blank name becomes "Friend" (or whatever you set `defaultName` to).
+
+To build your own start screen instead, use plain `<<pronounpicker>>`. It shows just the picker, without the name box or button, and saves the player's choice as they make it, and `setup.pronouns.chosen()` tells you whether they've picked.
 
 ## Writing with it
 
@@ -51,6 +50,12 @@ Write the they/them version in curly braces, and it becomes whatever the player 
 | `{they'd}` | she'd | he'd | xe'd | Robin would |
 
 Start a token with a capital letter for a capital: `{They}`, `{Their}`, `{They're}`.
+
+For the player's name, write `{name}`, or `{name's}` for the possessive. It uses "Friend" if the name is blank, so a sentence never ends up with a gap.
+
+```
+{name} grabs {their} coat. "Wait for me," {they} {call/calls}.
+```
 
 **Verbs:** write the they form first, then the she/he form, with a slash: `{are/is}`, `{run/runs}`, `{have/has}`. A verb follows the nearest `{they}` before it.
 
@@ -101,6 +106,7 @@ setup.pronouns.fill("{They} waved.", "sam")  // fill tokens in any text; the spe
 setup.pronouns.open()                        // open the "Name and pronouns" window
 setup.pronouns.describe()                    // "she/her", "she/her and they/them", "any pronouns", or "just my name"
 setup.pronouns.chosen()                      // true once the player has picked
+setup.pronouns.name()                        // the player's name, or "Friend" if it's blank
 setup.pronouns.choose("they")                // pick for the player: "she", "he", "they", "xe", "ze", "any", or "name"
 setup.pronouns.choose("she", "they")         // two sets
 ```
