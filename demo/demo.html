@@ -259,11 +259,12 @@ var LZString=function(){var r=String.fromCharCode,o="ABCDEFGHIJKLMNOPQRSTUVWXYZa
 	function clean(v) {
 		return String(v || "").toLowerCase().replace(/[^\p{L}'’\- ]/gu, "").replace(/\s+/g, " ").trim();
 	}
-	/* names: trimmed and free of anything SugarCube reads as markup. The
-	   capital letters stay just as the player typed them, so names like
-	   "Mary Jane," "Jean-Luc," or an all-lowercase name come out right. */
+	/* names: trimmed, free of anything SugarCube reads as markup, and
+	   starting with a capital letter. The rest stays as the player typed
+	   it, so "McKenzie" and "DeShawn" keep their capitals. */
 	function fixName(raw) {
-		return String(raw == null ? "" : raw).replace(/[<>\[\]{}$_`\\|@]/g, "").replace(/\s+/g, " ").trim();
+		var n = String(raw == null ? "" : raw).replace(/[<>\[\]{}$_`\\|@]/g, "").replace(/\s+/g, " ").trim();
+		return n ? n.charAt(0).toUpperCase() + n.slice(1) : "";
 	}
 	function complete(set) { return !!set && FIELDS.every(function (f) { return set[f]; }); }
 	function sameSet(a, b) { return !!a && !!b && FIELDS.every(function (f) { return a[f] === b[f]; }); }

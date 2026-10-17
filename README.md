@@ -195,7 +195,7 @@ setup.pronouns.config.requireName = false;
 - To show a token as written, put it inside `data-pronouns="off"`, or in code formatting (SugarCube's `{{{ }}}`).
 - When a player changes their name or pronouns, the change sticks. Going back a screen, reloading, or loading an earlier save from the same playthrough uses the new ones. Saves from other playthroughs keep their own.
 - Until the player picks, everyone uses they/them.
-- Names keep the capital letters the player types, so "Mary Jane," "Jean-Luc," and all-lowercase names come out the way they wrote them.
+- Names always start with a capital letter, even if the player typed a lowercase one. The rest stays as typed, so "McKenzie" and "DeShawn" keep their capitals.
 - SugarCube records changes when the player moves to the next screen. So if a player changes their pronouns and saves on that same screen, the save holds the old ones. In the same browser, the newest choice still wins, so this only matters for a save exported to a file and loaded somewhere else.
 - To build your own start screen instead, use plain `<<pronounpicker>>`. It shows just the picker, without the name box or button, and saves the choice as the player makes it. `setup.pronouns.chosen()` tells you whether they've picked.
 
